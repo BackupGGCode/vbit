@@ -1,0 +1,28 @@
+#summary What you need to get started with VBIT
+#labels Phase-Requirements
+
+= Introduction =
+
+You'll need to build the hardware. You must have the ability to assemble surface mount boards and stick down TQFP chips with confidence. Unless this project really takes off I can not manufacture boards for you.
+If you want to develop code then be aware that this
+
+= Hardware =
+The hardware is two parts. A processor board that you buy ready made and a video board that you will have to make.
+  * Buy the JM-XD200-USB board from http://xmega.mattair.net/index.html
+  * You'll also need a miniusb cable to go with it.
+  * A VBIT board. Contact me if you want to buy a bare board. I have a few in stock made by Beta Layout. They do need a few patches.
+  * The project has circuit diagrams, gerbers and a bill of materials that I will post if anyone needs it.
+
+= Software =
+The software is in three broad categories, namely tools, libraries and source code.
+==Tools==
+  * Atmel AVR Studio 4. Used for programming the XMEGA via the AVRISP simulator.
+  * Atmel Flip. Used for programming the AVR USB SPI Bridge.
+  * WinAVR. The toolchain including compiler and linker
+  * You may also like to download the demo code for the JM-SD200-USB board as it contains many useful examples and it may have better USB bridge code.
+==Libraries==
+These libraries may need to be installed.
+  * LUFA is the Lightweight USB Framework for AVRs.
+  * FatFS is the FAT filing system that is used to read the SD card.
+==Source Code==
+This is the actual VBIT code. I need to examine the code and replace any non-GPL parts that may be in there before it can be released.
