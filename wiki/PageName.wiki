@@ -1,0 +1,18 @@
+#summary VBIT Teletext Inserter.
+
+= Introduction =
+VBIT is a teletext inserter. At the moment a CPU board and a video board. It is early days and I hope to release the designs and code soon. Why teletext just as it is going out of fashion? Not really any good reason except that it can be done inexpensively using modern components.
+
+
+= Applications =
+
+So could you do with it?
+* Test signal generator
+* Databroadcast inserter
+* Cheap signage
+* Cheap information systems
+* Opt-out encoding
+* 
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
