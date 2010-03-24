@@ -3,16 +3,23 @@
 = Introduction =
 VBIT is a teletext inserter. At the moment a CPU board and a video board. It is early days and I hope to release the designs and code soon. Why teletext just as it is going out of fashion? Not really any good reason except that it can be done inexpensively using modern components.
 
+The processor board has a lot of spare I/O including a temperature sensor and A to D.
+
 
 = Applications =
 
-So could you do with it?
-* Test signal generator
-* Databroadcast inserter
-* Cheap signage
-* Cheap information systems
-* Opt-out encoding
-* 
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+So could you do with it (once you programmed it)?
+ * Test signal generator
+ * Databroadcast inserter
+ * Cheap signage
+ * Cheap information systems
+ * Opt-out encoding
+ * Mode 7 Tetris or Pong
+ * Oscilloscope
+ * Weather station
+ * Model Railway indicator display
+ * Twitter Feed
+ * Graphics mode analogue clock
+ * Kitchen timer
+ * Screen saver
+ * RSS alerts
