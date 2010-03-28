@@ -5,6 +5,8 @@ VBIT is a teletext inserter. At the moment a CPU board and a video board. It is 
 
 The processor board has a lot of spare I/O including a temperature sensor and A to D.
 
+http://farm5.static.flickr.com/4046/4467710031_c4ea82730c_d.jpg
+
 
 = Applications =
 
