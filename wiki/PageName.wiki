@@ -1,7 +1,7 @@
 #summary VBIT Teletext Inserter.
 
 = Introduction =
-VBIT is a teletext inserter. At the moment a CPU board and a video board. It is early days and I hope to release the designs and code soon. Why teletext just as it is going out of fashion? Not really any good reason except that it can be done inexpensively using modern components. It will enable people to continue using teletext after the networks shut it down.
+VBIT is a teletext inserter. At the moment it is a CPU board and a video board. It is early days and I hope to release the designs and code soon. Why teletext just as it is going out of fashion? Not really any good reason except that it can be done inexpensively using modern components. It will enable people to continue using teletext after the networks shut it down.
 
 The processor board has a lot of spare I/O including a temperature sensor and A to D.
 
