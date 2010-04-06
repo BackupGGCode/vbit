@@ -127,7 +127,7 @@ void QuietLine(char * packet)
 	for (int i=0;i<PACKETSIZE;i++)
 		if (debug)
 		{
-			packet[i]=(i%10)>5?0xff:0x00;
+			packet[i]=(i%10)>5?0xff:0x00; // Insert a recognisable waveform for the scope
 		}
 		else		
 			packet[i]=0;
@@ -225,9 +225,45 @@ static unsigned char copyOL(char *packet, char *textline)
 /** Fastext links
  * FL,<link red>,<link green>,<link yellow,<link cyan>,<link>,<link index>
  */
-static void copyFL(char *packet, char *textline)
+static void copyFL(char *packet, char *textline, PAGE *page)
 {
-	QuietLine(packet);	// TODO: Fastext links	
+	long nLink;
+	// add the designation code
+	packet+=5;
+	packet+=HamTab[0];
+			 // work out what the magazine number for this page is
+	char cCurMag=page->mag;
+	
+	// for each of the six links
+	for (int i=0; (i < 6) && (*textline); i++)
+	{
+		// Skip to the comma to get the body of the command
+		for (i=0;i<4 && ((*textline++)!=',');i++);
+		if (*(textline-1)!=',')
+		{
+			return; // failed :-(
+		}	
+		xatoi(&textline,&nLink);
+		//if (page->page==0 && page->mag==1)
+		//{
+		//	xprintf(PSTR("[copyFL]page 100 link:%ld\n"),nLink);
+		//}
+			// int nLink =StrToIntDef("0x" + strParams.SubString(1 + i*4,3),0x100);
+					 // calculate the relative magazine
+			char cRelMag=(nLink/0x100 ^ cCurMag);
+			packet+=HamTab[nLink & 0xF];			// page units
+			packet+=HamTab[(nLink & 0xF0) >> 4];	// page tens
+			packet+=HamTab[0xF];									// subcode S1
+			packet+=HamTab[((cRelMag & 1) << 3) | 7];
+			packet+=HamTab[0xF];
+			packet+=HamTab[((cRelMag & 6) << 1) | 3];
+	}	
+	// add the link control byte
+	packet+=HamTab[15];
+
+	// and the page CRC
+	packet+=HamTab[0];
+	packet+=HamTab[0];	
 }
 
 /** This generates the next line
@@ -239,6 +275,7 @@ static unsigned char insert(char *packet, uint8_t field)
 	static FIL pagefile, list;
 	static uint8_t savefield;
 	static DWORD fileptr;		// Used to save the file pointer to the body of the ttx file
+	static PAGE page;
 	char pagename[15];
 	char listentry[25];
 	char data[80];
@@ -246,7 +283,6 @@ static unsigned char insert(char *packet, uint8_t field)
 	char *p;
 	unsigned char row;
 	FRESULT res;	
-	PAGE page;
 	BYTE drive=0;
 	DWORD pageptr;				// Pointer to the start of page in pages.all
 	DWORD pagesize;				// Size of the page in pages.all
@@ -380,7 +416,9 @@ static unsigned char insert(char *packet, uint8_t field)
 				if (str[0]=='F' && str[1]=='L')		// Fastext links X26
 				{
 					noCarousel=1; // Indicate the end of this page. Kill it now. TODO: Implement carousels
-					copyFL(packet,str);	
+					copyFL(packet,str,&page);	
+					WritePrefix(packet,page.mag,27); // X/27/0	
+					Parity(packet,5);					
 				}
 			}
 			else
@@ -477,6 +515,7 @@ void FillFIFO(void)
 	fifoWriteAddress=fifoWriteIndex*FIFOBLOCKSIZE+fifoLineCounter*PACKETSIZE;
 	SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO address to write to the current write address
 	// xputs(PSTR("i"));	
+	oddfield=fifoWriteIndex%2;	
 	while(1) // loop until we hit a FIFO access conflict or the FIFO is full.
 	{
 		if (!packetToWrite) // If we have a packet to write then it is already in the buffer
