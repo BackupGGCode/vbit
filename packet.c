@@ -58,10 +58,10 @@ static unsigned char state[8]={0,0,0,0,0,0,0,0};
 #define STATE_HEADER	2
 #define STATE_SENDING	3
 
-// How many vbi lines per field
-#define MAXLINE	16
+// How many vbi lines per field. Not quite right. Odd field is 17 (6..22), Even is 18 (318..335).
+#define MAXLINE	17
 
-char g_OutputActions[2][17];
+char g_OutputActions[2][18];
 
 /** Check that parity is correct for the packet payload
  * The parity is set to odd for all bytes from offset to the end
@@ -123,8 +123,14 @@ void FillerPacket(char *packet)
  */
 void QuietLine(char * packet)
 {
+	const unsigned char debug=1;
 	for (int i=0;i<PACKETSIZE;i++)
-		packet[i]=0;
+		if (debug)
+		{
+			packet[i]=(i%10)>5?0xff:0x00;
+		}
+		else		
+			packet[i]=0;
 } // QuietLine
 
 /** A header has mag, row=0, page, flags, caption and time
@@ -464,7 +470,7 @@ void FillFIFO(void)
 	static uint8_t packetToWrite=0; // Flags a left over packet that we need to send
 
 	// xputc(PORTC.IN&VBIT_FLD?'O':'E'); // Odd even indicator (just debug nonsense)
-	uint8_t field; //=PORTC.IN&VBIT_FLD?1:0;	// Odd or even?
+	uint8_t oddfield; //=PORTC.IN&VBIT_FLD?1:0;	// Odd or even?
 
 	// Get the FIFO ready for new data
 	PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control
@@ -475,9 +481,9 @@ void FillFIFO(void)
 	{
 		if (!packetToWrite) // If we have a packet to write then it is already in the buffer
 		{
-			field=fifoWriteIndex%2;	// TODO: Check that this is odd or even
+			oddfield=fifoWriteIndex%2;	// TODO: Check that this is odd or even
 
-			action=g_OutputActions[field][fifoLineCounter];
+			action=g_OutputActions[oddfield][fifoLineCounter];
 			// xputc(action);
 			switch (action)
 			{
@@ -499,7 +505,7 @@ void FillFIFO(void)
 			case '7' :;
 			case '8' :;
 				//xputs(PSTR("i"));			
-				insert(packet,field);
+				insert(packet,oddfield);
 				break;
 			default: // Error! Don't know what to do. Make it quiet.
 				QuietLine(packet);
@@ -518,7 +524,8 @@ void FillFIFO(void)
 
 		// Work out the next line
 		fifoLineCounter++;
-		if (fifoLineCounter>=MAXLINE) // End of block? Start next field
+		// The odd field is 17 while even is 18 lines
+		if (fifoLineCounter>=(MAXLINE+(oddfield?1:0))) // End of block? Start next field
 		{
 			uint8_t index;
 			index=(fifoWriteIndex+1)%MAXFIFOINDEX;
