@@ -394,7 +394,7 @@ int RunVBIT(void)
 	f_mount(0,&Fatfs[0]);
 
 	for (field=0;field<2;field++)
-		for (line=0;line<16;line++)
+		for (line=0;line<18;line++)
 			g_OutputActions[field][line]='I'; // Todo: Get these actions from INI
 
 	for (;;)
