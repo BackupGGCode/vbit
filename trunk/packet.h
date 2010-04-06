@@ -100,7 +100,7 @@ void FillerPacket(char *buffer);
 void FillFIFO(void);
 
 /// Dataline Output Actions array. 
-extern char g_OutputActions[2][17];
+extern char g_OutputActions[2][18];
 
 extern void put_rc (FRESULT rc);
 extern FATFS Fatfs[1];

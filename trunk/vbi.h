@@ -46,12 +46,13 @@ extern volatile uint8_t vbiDone; /// Goes high when the vbi has been transmitted
 extern volatile uint32_t UTC; /// Universal Coordinated Time
 void InitVBI(void);
 extern volatile uint8_t FIFOBusy; /// High when the FIFO is due to be transmitted
-// A block is 45 bytes * 16 lines = 720 bytes
-// There is enough space in the SPIRAM for 45 blocks
+// A block is 45 bytes * 17 or 18 lines = 810 bytes (max)
+// The SPIRAM is 32kb. ie 0x40000/8=32768
+// There is enough space in the SPIRAM for 32768/810 = 40 blocks
 // But we also use a block number to denote the odd/even phase 
-// so we need an even number of blocks which gives us 44.
-#define FIFOBLOCKSIZE 720
-#define MAXFIFOINDEX 44
-extern volatile uint8_t fifoReadIndex; /// maintains the tx block index 0..43
-extern volatile uint8_t fifoWriteIndex; /// maintains the load index 0..43
+// so we need an even number of blocks which gives us the same 40.
+#define FIFOBLOCKSIZE 810
+#define MAXFIFOINDEX 40
+extern volatile uint8_t fifoReadIndex; /// maintains the tx block index 0..39
+extern volatile uint8_t fifoWriteIndex; /// maintains the load index 0..39
 #endif
