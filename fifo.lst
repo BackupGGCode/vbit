@@ -1,0 +1,406 @@
+   1               		.file	"fifo.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	DeselectSerialRam
+  18               	DeselectSerialRam:
+  19               	.LFB12:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 80E1      		ldi r24,lo8(16)
+  25 0002 E0E4      		ldi r30,lo8(1600)
+  26 0004 F6E0      		ldi r31,hi8(1600)
+  27 0006 8583      		std Z+5,r24
+  28               	/* epilogue start */
+  29               	.LM3:
+  30 0008 0895      		ret
+  31               	.LFE12:
+  33               	.global	WriteSerialRam
+  35               	WriteSerialRam:
+  36               	.LFB10:
+  37               	.LM4:
+  38               	.LVL0:
+  39 000a EF92      		push r14
+  40 000c FF92      		push r15
+  41 000e 0F93      		push r16
+  42 0010 1F93      		push r17
+  43 0012 CF93      		push r28
+  44 0014 DF93      		push r29
+  45               	/* prologue: function */
+  46               	/* frame size = 0 */
+  47 0016 7C01      		movw r14,r24
+  48 0018 8B01      		movw r16,r22
+  49               	.LM5:
+  50 001a C0E0      		ldi r28,lo8(0)
+  51 001c D0E0      		ldi r29,hi8(0)
+  52               	.LVL1:
+  53 001e 00C0      		rjmp .L4
+  54               	.LVL2:
+  55               	.L5:
+  56               	.LM6:
+  57 0020 F701      		movw r30,r14
+  58 0022 EC0F      		add r30,r28
+  59 0024 FD1F      		adc r31,r29
+  60 0026 80E0      		ldi r24,lo8(spiMaster)
+  61 0028 90E0      		ldi r25,hi8(spiMaster)
+  62 002a 6081      		ld r22,Z
+  63 002c 0E94 0000 		call SPI_MasterTransceiveByte
+  64               	.LM7:
+  65 0030 2196      		adiw r28,1
+  66               	.LVL3:
+  67               	.L4:
+  68 0032 C017      		cp r28,r16
+  69 0034 D107      		cpc r29,r17
+  70 0036 00F0      		brlo .L5
+  71               	/* epilogue start */
+  72               	.LM8:
+  73 0038 DF91      		pop r29
+  74 003a CF91      		pop r28
+  75               	.LVL4:
+  76 003c 1F91      		pop r17
+  77 003e 0F91      		pop r16
+  78               	.LVL5:
+  79 0040 FF90      		pop r15
+  80 0042 EF90      		pop r14
+  81               	.LVL6:
+  82 0044 0895      		ret
+  83               	.LFE10:
+  85               	.global	SetSerialRamAddress
+  87               	SetSerialRamAddress:
+  88               	.LFB9:
+  89               	.LM9:
+  90               	.LVL7:
+  91 0046 0F93      		push r16
+  92 0048 1F93      		push r17
+  93               	/* prologue: function */
+  94               	/* frame size = 0 */
+  95 004a 382F      		mov r19,r24
+  96 004c 8B01      		movw r16,r22
+  97               	.LVL8:
+  98               	.LM10:
+  99 004e 80E0      		ldi r24,lo8(0)
+ 100 0050 90E0      		ldi r25,hi8(0)
+ 101               	.LVL9:
+ 102               	.LBB2:
+ 103               	.LM11:
+ 104 0052 E0E4      		ldi r30,lo8(1600)
+ 105 0054 F6E0      		ldi r31,hi8(1600)
+ 106 0056 20E1      		ldi r18,lo8(16)
+ 107               	.L8:
+ 108 0058 2583      		std Z+5,r18
+ 109               	.LM12:
+ 110 005a 0196      		adiw r24,1
+ 111 005c 43E0      		ldi r20,hi8(1000)
+ 112 005e 883E      		cpi r24,lo8(1000)
+ 113 0060 9407      		cpc r25,r20
+ 114 0062 01F4      		brne .L8
+ 115               	.LBE2:
+ 116               	.LM13:
+ 117 0064 80E1      		ldi r24,lo8(16)
+ 118               	.LVL10:
+ 119 0066 E0E4      		ldi r30,lo8(1600)
+ 120 0068 F6E0      		ldi r31,hi8(1600)
+ 121 006a 8683      		std Z+6,r24
+ 122               	.LM14:
+ 123 006c 80E0      		ldi r24,lo8(spiMaster)
+ 124 006e 90E0      		ldi r25,hi8(spiMaster)
+ 125 0070 632F      		mov r22,r19
+ 126 0072 0E94 0000 		call SPI_MasterTransceiveByte
+ 127               	.LVL11:
+ 128               	.LM15:
+ 129 0076 80E0      		ldi r24,lo8(spiMaster)
+ 130 0078 90E0      		ldi r25,hi8(spiMaster)
+ 131 007a 612F      		mov r22,r17
+ 132               	.LVL12:
+ 133 007c 0E94 0000 		call SPI_MasterTransceiveByte
+ 134               	.LM16:
+ 135 0080 80E0      		ldi r24,lo8(spiMaster)
+ 136 0082 90E0      		ldi r25,hi8(spiMaster)
+ 137 0084 602F      		mov r22,r16
+ 138               	.LVL13:
+ 139 0086 0E94 0000 		call SPI_MasterTransceiveByte
+ 140               	/* epilogue start */
+ 141               	.LM17:
+ 142 008a 1F91      		pop r17
+ 143               	.LVL14:
+ 144 008c 0F91      		pop r16
+ 145               	.LVL15:
+ 146 008e 0895      		ret
+ 147               	.LFE9:
+ 149               	.global	GetSerialRamStatus
+ 151               	GetSerialRamStatus:
+ 152               	.LFB8:
+ 153               	.LM18:
+ 154 0090 DF92      		push r13
+ 155 0092 EF92      		push r14
+ 156 0094 FF92      		push r15
+ 157 0096 0F93      		push r16
+ 158 0098 1F93      		push r17
+ 159               	/* prologue: function */
+ 160               	/* frame size = 0 */
+ 161               	.LM19:
+ 162 009a 00E4      		ldi r16,lo8(1600)
+ 163 009c 16E0      		ldi r17,hi8(1600)
+ 164 009e 90E1      		ldi r25,lo8(16)
+ 165 00a0 D92E      		mov r13,r25
+ 166 00a2 F801      		movw r30,r16
+ 167 00a4 D582      		std Z+5,r13
+ 168               	.LM20:
+ 169 00a6 D682      		std Z+6,r13
+ 170               	.LM21:
+ 171 00a8 80E0      		ldi r24,lo8(spiMaster)
+ 172 00aa E82E      		mov r14,r24
+ 173 00ac 80E0      		ldi r24,hi8(spiMaster)
+ 174 00ae F82E      		mov r15,r24
+ 175 00b0 C701      		movw r24,r14
+ 176 00b2 65E0      		ldi r22,lo8(5)
+ 177 00b4 0E94 0000 		call SPI_MasterTransceiveByte
+ 178               	.LM22:
+ 179 00b8 C701      		movw r24,r14
+ 180 00ba 6FE3      		ldi r22,lo8(63)
+ 181 00bc 0E94 0000 		call SPI_MasterTransceiveByte
+ 182               	.LM23:
+ 183 00c0 F801      		movw r30,r16
+ 184 00c2 D582      		std Z+5,r13
+ 185               	.LM24:
+ 186 00c4 90E0      		ldi r25,lo8(0)
+ 187               	/* epilogue start */
+ 188 00c6 1F91      		pop r17
+ 189 00c8 0F91      		pop r16
+ 190 00ca FF90      		pop r15
+ 191 00cc EF90      		pop r14
+ 192 00ce DF90      		pop r13
+ 193 00d0 0895      		ret
+ 194               	.LFE8:
+ 196               	.global	SetSerialRamStatus
+ 198               	SetSerialRamStatus:
+ 199               	.LFB7:
+ 200               	.LM25:
+ 201               	.LVL16:
+ 202 00d2 CF92      		push r12
+ 203 00d4 DF92      		push r13
+ 204 00d6 EF92      		push r14
+ 205 00d8 FF92      		push r15
+ 206 00da 0F93      		push r16
+ 207 00dc 1F93      		push r17
+ 208               	/* prologue: function */
+ 209               	/* frame size = 0 */
+ 210 00de C82E      		mov r12,r24
+ 211               	.LM26:
+ 212 00e0 30E4      		ldi r19,lo8(1600)
+ 213 00e2 E32E      		mov r14,r19
+ 214 00e4 36E0      		ldi r19,hi8(1600)
+ 215 00e6 F32E      		mov r15,r19
+ 216 00e8 20E1      		ldi r18,lo8(16)
+ 217 00ea D22E      		mov r13,r18
+ 218 00ec F701      		movw r30,r14
+ 219 00ee D582      		std Z+5,r13
+ 220               	.LM27:
+ 221 00f0 D682      		std Z+6,r13
+ 222               	.LM28:
+ 223 00f2 00E0      		ldi r16,lo8(spiMaster)
+ 224 00f4 10E0      		ldi r17,hi8(spiMaster)
+ 225 00f6 C801      		movw r24,r16
+ 226               	.LVL17:
+ 227 00f8 61E0      		ldi r22,lo8(1)
+ 228 00fa 0E94 0000 		call SPI_MasterTransceiveByte
+ 229               	.LM29:
+ 230 00fe C801      		movw r24,r16
+ 231 0100 6C2D      		mov r22,r12
+ 232 0102 0E94 0000 		call SPI_MasterTransceiveByte
+ 233               	.LM30:
+ 234 0106 F701      		movw r30,r14
+ 235 0108 D582      		std Z+5,r13
+ 236               	/* epilogue start */
+ 237               	.LM31:
+ 238 010a 1F91      		pop r17
+ 239 010c 0F91      		pop r16
+ 240 010e FF90      		pop r15
+ 241 0110 EF90      		pop r14
+ 242 0112 DF90      		pop r13
+ 243 0114 CF90      		pop r12
+ 244               	.LVL18:
+ 245 0116 0895      		ret
+ 246               	.LFE7:
+ 248               	.global	ReadSerialRam
+ 250               	ReadSerialRam:
+ 251               	.LFB11:
+ 252               	.LM32:
+ 253               	.LVL19:
+ 254 0118 AF92      		push r10
+ 255 011a BF92      		push r11
+ 256 011c CF92      		push r12
+ 257 011e DF92      		push r13
+ 258 0120 EF92      		push r14
+ 259 0122 FF92      		push r15
+ 260 0124 0F93      		push r16
+ 261 0126 1F93      		push r17
+ 262 0128 CF93      		push r28
+ 263 012a DF93      		push r29
+ 264               	/* prologue: function */
+ 265               	/* frame size = 0 */
+ 266 012c 7C01      		movw r14,r24
+ 267 012e 5B01      		movw r10,r22
+ 268               	.LVL20:
+ 269               	.LM33:
+ 270 0130 80E0      		ldi r24,lo8(__c.3476)
+ 271 0132 90E0      		ldi r25,hi8(__c.3476)
+ 272               	.LVL21:
+ 273 0134 0E94 0000 		call xputs
+ 274 0138 00E0      		ldi r16,lo8(0)
+ 275 013a 10E0      		ldi r17,hi8(0)
+ 276               	.LVL22:
+ 277               	.LM34:
+ 278 013c 40E0      		ldi r20,lo8(__c.3478)
+ 279 013e C42E      		mov r12,r20
+ 280 0140 40E0      		ldi r20,hi8(__c.3478)
+ 281 0142 D42E      		mov r13,r20
+ 282 0144 00C0      		rjmp .L16
+ 283               	.L17:
+ 284               	.LM35:
+ 285 0146 80E0      		ldi r24,lo8(spiMaster)
+ 286 0148 90E0      		ldi r25,hi8(spiMaster)
+ 287 014a 6FE3      		ldi r22,lo8(63)
+ 288 014c 0E94 0000 		call SPI_MasterTransceiveByte
+ 289 0150 F701      		movw r30,r14
+ 290 0152 E00F      		add r30,r16
+ 291 0154 F11F      		adc r31,r17
+ 292 0156 8083      		st Z,r24
+ 293               	.LM36:
+ 294 0158 00D0      		rcall .
+ 295 015a 0F92      		push __tmp_reg__
+ 296 015c EDB7      		in r30,__SP_L__
+ 297 015e FEB7      		in r31,__SP_H__
+ 298 0160 3196      		adiw r30,1
+ 299 0162 ADB7      		in r26,__SP_L__
+ 300 0164 BEB7      		in r27,__SP_H__
+ 301 0166 1196      		adiw r26,1
+ 302 0168 CD92      		st X+,r12
+ 303 016a DC92      		st X,r13
+ 304 016c 1297      		sbiw r26,1+1
+ 305 016e 8283      		std Z+2,r24
+ 306 0170 1382      		std Z+3,__zero_reg__
+ 307 0172 0E94 0000 		call xprintf
+ 308               	.LM37:
+ 309 0176 0F5F      		subi r16,lo8(-(1))
+ 310 0178 1F4F      		sbci r17,hi8(-(1))
+ 311 017a 0F90      		pop __tmp_reg__
+ 312 017c 0F90      		pop __tmp_reg__
+ 313 017e 0F90      		pop __tmp_reg__
+ 314 0180 0F90      		pop __tmp_reg__
+ 315               	.L16:
+ 316 0182 E501      		movw r28,r10
+ 317 0184 0A15      		cp r16,r10
+ 318 0186 1B05      		cpc r17,r11
+ 319 0188 00F0      		brlo .L17
+ 320               	.LM38:
+ 321 018a 80E0      		ldi r24,lo8(__c.3483)
+ 322 018c 90E0      		ldi r25,hi8(__c.3483)
+ 323 018e 0E94 0000 		call xputs
+ 324               	.LM39:
+ 325 0192 CE0D      		add r28,r14
+ 326 0194 DF1D      		adc r29,r15
+ 327 0196 1882      		st Y,__zero_reg__
+ 328               	/* epilogue start */
+ 329               	.LM40:
+ 330 0198 DF91      		pop r29
+ 331 019a CF91      		pop r28
+ 332 019c 1F91      		pop r17
+ 333 019e 0F91      		pop r16
+ 334               	.LVL23:
+ 335 01a0 FF90      		pop r15
+ 336 01a2 EF90      		pop r14
+ 337               	.LVL24:
+ 338 01a4 DF90      		pop r13
+ 339 01a6 CF90      		pop r12
+ 340 01a8 BF90      		pop r11
+ 341 01aa AF90      		pop r10
+ 342 01ac 0895      		ret
+ 343               	.LFE11:
+ 345               	.global	spiram_initialise
+ 347               	spiram_initialise:
+ 348               	.LFB6:
+ 349               	.LM41:
+ 350 01ae AF92      		push r10
+ 351 01b0 CF92      		push r12
+ 352 01b2 EF92      		push r14
+ 353 01b4 0F93      		push r16
+ 354               	/* prologue: function */
+ 355               	/* frame size = 0 */
+ 356               	.LM42:
+ 357 01b6 E0E4      		ldi r30,lo8(1600)
+ 358 01b8 F6E0      		ldi r31,hi8(1600)
+ 359 01ba 80E1      		ldi r24,lo8(16)
+ 360 01bc 8183      		std Z+1,r24
+ 361               	.LM43:
+ 362 01be 148A      		std Z+20,__zero_reg__
+ 363               	.LM44:
+ 364 01c0 8583      		std Z+5,r24
+ 365               	.LM45:
+ 366 01c2 80E0      		ldi r24,lo8(spiMaster)
+ 367 01c4 90E0      		ldi r25,hi8(spiMaster)
+ 368 01c6 60EC      		ldi r22,lo8(2240)
+ 369 01c8 78E0      		ldi r23,hi8(2240)
+ 370 01ca 40E4      		ldi r20,lo8(1600)
+ 371 01cc 56E0      		ldi r21,hi8(1600)
+ 372 01ce 20E0      		ldi r18,lo8(0)
+ 373 01d0 00E0      		ldi r16,lo8(0)
+ 374 01d2 EE24      		clr r14
+ 375 01d4 CC24      		clr r12
+ 376 01d6 C394      		inc r12
+ 377 01d8 AA24      		clr r10
+ 378 01da 0E94 0000 		call SPI_MasterInit
+ 379               	/* epilogue start */
+ 380               	.LM46:
+ 381 01de 0F91      		pop r16
+ 382 01e0 EF90      		pop r14
+ 383 01e2 CF90      		pop r12
+ 384 01e4 AF90      		pop r10
+ 385 01e6 0895      		ret
+ 386               	.LFE6:
+ 388               		.section	.progmem.data,"a",@progbits
+ 391               	__c.3483:
+ 392 0000 0A0D 00   		.string	"\n\r"
+ 395               	__c.3478:
+ 396 0003 2025 3032 		.string	" %02X"
+ 396      5800 
+ 399               	__c.3476:
+ 400 0009 5265 6164 		.string	"ReadSerialRam\n\rRX:"
+ 400      5365 7269 
+ 400      616C 5261 
+ 400      6D0A 0D52 
+ 400      583A 00
+ 401               		.comm spiMaster,7,1
+ 474               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 fifo.c
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:2      *ABS*:0000003f __SREG__
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:3      *ABS*:0000003e __SP_H__
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:4      *ABS*:0000003d __SP_L__
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:5      *ABS*:00000034 __CCP__
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:6      *ABS*:00000000 __tmp_reg__
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:7      *ABS*:00000001 __zero_reg__
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:18     .text:00000000 DeselectSerialRam
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:35     .text:0000000a WriteSerialRam
+                            *COM*:00000007 spiMaster
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:87     .text:00000046 SetSerialRamAddress
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:151    .text:00000090 GetSerialRamStatus
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:198    .text:000000d2 SetSerialRamStatus
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:250    .text:00000118 ReadSerialRam
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:399    .progmem.data:00000009 __c.3476
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:395    .progmem.data:00000003 __c.3478
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:391    .progmem.data:00000000 __c.3483
+C:\DOCUME~1\peter\LOCALS~1\Temp/ccznDQth.s:347    .text:000001ae spiram_initialise
+
+UNDEFINED SYMBOLS
+SPI_MasterTransceiveByte
+xputs
+xprintf
+SPI_MasterInit
+__do_clear_bss

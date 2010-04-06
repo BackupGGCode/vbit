@@ -1,0 +1,194 @@
+/** \file packet.c
+ * Basic packet management
+ */
+
+#include "packet.h"
+
+
+
+/** Check that parity is correct for the packet payload
+ * The parity is set to odd for all bytes from offset to the end
+ * \param packet : packet to check
+ * \param offset : start offset to check. (5 for rows, 13 for header)
+ */
+void Parity(char *packet, uint8_t offset)
+{
+	int i;
+	uint8_t c;
+	for (i=offset;i<PACKETSIZE;i++)
+	{
+		
+		packet[i]=pgm_read_byte(ParTab+(uint8_t)(packet[i]&0x7f)); // Strange syntax because of ParTab in progmem
+	}
+	for (i=0;i<PACKETSIZE;i++)
+	{
+		c=(uint8_t)packet[i];
+		c = (c & 0x0F) << 4 | (c & 0xF0) >> 4;
+		c = (c & 0x33) << 2 | (c & 0xCC) >> 2;
+		c = (c & 0x55) << 1 | (c & 0xAA) >> 1;	
+		packet[i]=(char)c;
+	}
+}
+
+/** The prefix is the first five characters
+ * consisting of the clock run in, framing code, mag and row
+ */
+void WritePrefix(char *packet, uint8_t mag, uint8_t row)
+{
+	char *p=packet;
+	*p++=0x55; // cri
+	*p++=0x55; // cri
+	*p++=0x27; // fc
+	// add MRAG
+	*p++=HamTab[mag%8+((row%2)<<3)]; // mag + bit 3 is the lowest bit of row
+	*p++=HamTab[((row>>1)&0x0f)];
+}
+
+/** Stuffs a line where all the packet contents is value
+ */
+void FillerTest(char *packet, uint8_t value)
+{
+	WritePrefix(packet,8,25);
+	for (int i=5;i<PACKETSIZE;i++)
+		packet[i]=value;
+}
+
+void FillerPacket(char *packet)
+{
+	int i;
+	WritePrefix(packet,8,25);
+	for (i=5;i<PACKETSIZE;i++)
+		packet[i]=' ';
+	Parity(packet,5);
+}
+
+/** A header has mag, row=0, page, flags, caption and time
+ */
+void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int subcode,
+			unsigned int control, char *caption)
+{
+	static int lastsec;
+	char date[10];
+	uint8_t hour, min, sec;
+	uint32_t utc;
+	WritePrefix(packet,mag,0);
+	packet[5]=HamTab[page/10];
+	packet[6]=HamTab[page%10];
+	packet[7]=HamTab[(subcode&0x0f)]; // S1
+	subcode>>=4;
+	packet[8]=HamTab[(subcode&0x07)]; // S2 TBA add C4
+	subcode>>=3;
+	packet[9]=HamTab[(subcode&0x0f)]; // S3
+	subcode>>=4;
+	packet[10]=HamTab[(subcode&0x03)]; // S4 TBA C6, C5
+	packet[11]=HamTab[0]; // TBA C7 to C10
+	packet[12]=HamTab[0]; // TBA C11 to C14
+	strncpy(&packet[13],caption,24); // This is dangerously out of order! Need to range check and fill as needed
+	// Stick the time in. Need to implement flexible date/time formatting
+	utc=UTC;
+	sec=utc%60;
+	utc/=60;
+	min=utc%60;
+	hour=utc/60;
+	//if (lastsec!=sec)
+	//	xprintf(PSTR("%02d:%02d.%02d "),hour,min,sec);
+	lastsec=sec;
+	//sprintf(&packet[37],"%02d:%02d.%02d",hour,min,sec);
+	packet[37]='0'+hour/10; // grrr. Stupid sprintf breaking the CLI
+	packet[38]='0'+hour%10;
+	packet[39]=':';
+	packet[40]='0'+min/10;
+	packet[41]='0'+min%10;
+	packet[42]='.';
+	packet[43]='0'+sec/10;
+	packet[44]='0'+sec%10;
+
+	Parity(packet,13);		
+}
+
+void Row(char * packet, unsigned char mag, unsigned char row, char * str)
+{
+	WritePrefix(packet,mag,row);
+	strncpy(packet+5,str,40);
+	Parity(packet,5);		
+}
+
+void TestPage(void)
+{
+char packet[PACKETSIZE];
+static uint8_t counter=0;
+uint8_t i;
+int control;
+	control=CTRL_LANGUAGE_0_bm | CTRL_ENABLETX_bm;
+	if (PORTC.IN&VBIT_FLD) // Odd field
+	{
+		Header(packet,1,0,0,control,"VBIT Pocket Inserter            ");		// 6 - 24 characters plus 8 for clock
+		return;
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,2,1,"                                        ");	// 7
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,2,2,"\177 Analog inserter with digital path     ");	// 8
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,2,3,"\177 USB controlled and powered            ");	// 9
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,2,4,"\177 SD card for a huge number of pages    ");	// 10
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,2,5,"\177 Can operate standalone with ext. power");	// 10
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,2,6,"\177 Inserts all WSS modes                 ");	// 10
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,2,7,"\177 Can handle PAL and NTSC video         ");	// 10
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,2,24,"\001\035\007Index \002Next  \003Up  \006Down              ");	// 10
+		WriteSerialRam(packet, PACKETSIZE);
+		FillerPacket(packet);
+		if (counter>=25)
+		{
+			counter=0;
+			// At this point generate packet 8/30/1
+			FillerTest(packet,0xff);
+		}
+		WriteSerialRam(packet, PACKETSIZE);		
+		FillerPacket(packet);
+		for (i=11;i<21;i++)
+			WriteSerialRam(packet, PACKETSIZE);
+
+		counter++;
+	}
+#if 0	
+	else // even field
+	{
+		Header(packet,2,0,0,control,"VBIT Test page                  ");		
+		WriteSerialRam(packet, PACKETSIZE);	
+		Row(packet,1,1,"This is a line of text, MAG 1, ROW 1    ");	// 7
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,1,2,"This is a line of text, MAG 1, ROW 2    ");	// 8
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,1,3,"This is a line of text, MAG 1, ROW 3    ");	// 9
+		WriteSerialRam(packet, PACKETSIZE);
+		Row(packet,1,4,"This is a line of text, MAG 1, ROW 4    ");	// 10
+		WriteSerialRam(packet, PACKETSIZE);
+		FillerPacket(packet);
+		for (i=11;i<22;i++)
+			WriteSerialRam(packet, PACKETSIZE);
+	}
+#endif	
+}
+
+/** Loads the FIFO with a field of text packets
+ *  and leaves it ready to clock out TTX
+ */
+void FillFIFO(void)
+{
+	// xputc(PORTC.IN&VBIT_FLD?'O':'E'); // Odd even indicator (just debug nonsense)
+
+	// Get the FIFO ready for new data
+	PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control
+	
+	SetSerialRamAddress(SPIRAM_WRITE, 0); 	// Set FIFO address to write to 0
+
+	TestPage();	// Write data to the FIFO
+	// Reset the FIFO ready to clock out TTX
+	SetSerialRamAddress(SPIRAM_READ, 0); // Set the FIFO to read from address 0
+	PORTC.OUT|=VBIT_SEL; // Set the mux to DENC.
+}
