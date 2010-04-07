@@ -59,12 +59,13 @@ static unsigned char state[8]={0,0,0,0,0,0,0,0};
 #define STATE_SENDING	3
 
 // How many vbi lines per field. Not quite right. Odd field is 17 (6..22), Even is 18 (318..335).
-#define MAXLINE	17
+#define VBILINES	17
 
 char g_OutputActions[2][18];
 
 /** Check that parity is correct for the packet payload
  * The parity is set to odd for all bytes from offset to the end
+ * The bits are then all reversed into transmission order
  * \param packet : packet to check
  * \param offset : start offset to check. (5 for rows, 13 for header)
  */
@@ -155,6 +156,11 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 	packet[11]=HamTab[0]; // TBA C7 to C10
 	packet[12]=HamTab[0]; // TBA C11 to C14
 	strncpy(&packet[13],caption,24); // This is dangerously out of order! Need to range check and fill as needed
+	// Stuff the page number in. TODO: make it flexible format, and work with hex numbers etc.
+	packet[20]=mag+'0';
+	packet[21]=(page/0x10)+'0';
+	packet[22]=(page%0x10)+'0';
+	xputc(packet[20]); // Echo the mag for debugging
 	// Stick the time in. Need to implement flexible date/time formatting
 	utc=UTC;
 	sec=utc%60;
@@ -202,23 +208,27 @@ static unsigned char copyOL(char *packet, char *textline)
 	for (i=0;i<4 && ((*textline++)!=',');i++);
 	if (*(textline-1)!=',')
 	{
+		xputc('F');
 		return 0xff; // failed
 	}
+	for (char *p=packet+5;p<(packet+PACKETSIZE);p++)*p='P';
 	for (char *p=packet+5;*textline && p<(packet+PACKETSIZE);textline++) // Stop on end of file OR packet over run
 	{
 		// TODO: Also need to check viewdata escapes
 		if (*p!=0x0d) // Do not include \r
 		{
-			if ((*textline && 0x7f)==0x0a)		
+			if ((*textline & 0x7f)==0x0a)		
 			{
 				// *p=0x0d; // Translate lf to cr (double height)
 				*p='?';
 			}
 			else
 				*p=*textline;
-			p++;
 		}
-	}	
+		p++;
+	}
+if (!*textline)
+		xputc('T');
 	return linenumber;
 } // copyOL
 
@@ -357,11 +367,11 @@ static unsigned char insert(char *packet, uint8_t field)
 		}
 		// xprintf(PSTR("M%d P%X, "),page.mag,page.page);
 		// create the header packet. TODO: Add a system wide header caption
-		Header(packet,page.mag,page.page,page.subpage,page.control,"ORACLE 401 Wed07 Apr ITV        ");		// 6 - 24 characters plus 8 for clock
+		Header(packet,page.mag,page.page,page.subpage,page.control,"ORACLE PPP Wed07 Apr ITV        ");		// 6 - 24 characters plus 8 for clock
 		state[mag]=STATE_HEADER;
 		break;
 	case STATE_HEADER: // We are waiting for the field to change before we can tx
-		// xputs(PSTR("H"));
+		//xputs(PSTR("H"));
 		if (field==savefield)
 		{
 			QuietLine(packet);	// TODO: We would let the next magazine steal this line
@@ -411,15 +421,14 @@ static unsigned char insert(char *packet, uint8_t field)
 					if (row==0xff)
 						xprintf(PSTR("[insert]Error: Page file has bad line:%s\n"),str);	
 					WritePrefix(packet,page.mag,row);
-					Parity(packet,5);	
 				}
 				if (str[0]=='F' && str[1]=='L')		// Fastext links X26
 				{
 					noCarousel=1; // Indicate the end of this page. Kill it now. TODO: Implement carousels
 					copyFL(packet,str,&page);	
 					WritePrefix(packet,page.mag,27); // X/27/0	
-					Parity(packet,5);					
 				}
+				Parity(packet,5);	
 			}
 			else
 			{
@@ -436,64 +445,6 @@ static unsigned char insert(char *packet, uint8_t field)
 	return 0; // success
 } // insert
 
-void TestPage(void)
-{
-char packet[PACKETSIZE];
-static uint8_t counter=0;
-uint8_t i;
-int control;
-	control=CTRL_LANGUAGE_0_bm | CTRL_ENABLETX_bm;
-	if (PORTC.IN&VBIT_FLD) // Odd field
-	{
-		Header(packet,1,0,0,control,"VBIT Pocket Inserter            ");		// 6 - 24 characters plus 8 for clock
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,2,1,"                                        ");	// 7
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,2,2,"\177 Analog inserter with digital path     ");	// 8
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,2,3,"\177 USB controlled and powered            ");	// 9
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,2,4,"\177 SD card for a huge number of pages    ");	// 10
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,2,5,"\177 Can operate standalone with ext. power");	// 10
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,2,6,"\177 Inserts all WSS modes                 ");	// 10
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,2,7,"\177 Can handle PAL and NTSC video         ");	// 10
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,2,24,"\001\035\007Index \002Next  \003Up  \006Down              ");	// 10
-		WriteSerialRam(packet, PACKETSIZE);
-		FillerPacket(packet);
-		if (counter>=25)
-		{
-			counter=0;
-			// At this point generate packet 8/30/1
-			FillerTest(packet,0xff);
-		}
-		WriteSerialRam(packet, PACKETSIZE);		
-		FillerPacket(packet);
-		for (i=11;i<21;i++)
-			WriteSerialRam(packet, PACKETSIZE);
-
-		counter++;
-	}
-	else // even field
-	{
-		Header(packet,2,0,0,control,"VBIT Test page                  ");		
-		WriteSerialRam(packet, PACKETSIZE);	
-		Row(packet,1,1,"This is a line of text, MAG 1, ROW 1    ");	// 7
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,1,2,"This is a line of text, MAG 1, ROW 2    ");	// 8
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,1,3,"This is a line of text, MAG 1, ROW 3    ");	// 9
-		WriteSerialRam(packet, PACKETSIZE);
-		Row(packet,1,4,"This is a line of text, MAG 1, ROW 4    ");	// 10
-		WriteSerialRam(packet, PACKETSIZE);
-		FillerPacket(packet);
-		for (i=11;i<22;i++)
-			WriteSerialRam(packet, PACKETSIZE);
-	}
-} // TestPage
 
 /** Loads the FIFO with text packets
  *  until either the FIFO is full
@@ -551,27 +502,30 @@ void FillFIFO(void)
 				xputc('?');				
 			}
 		}
-		packetToWrite=0;
+		else
+			packetToWrite=0;
+			
 		// Sometimes we can not put out the next line
 		// because the FIFO is busy or full so we return
 		if (FIFOBusy) // Can not write because the FIFO is busy
 		{
 			packetToWrite=1; // Flag that packet has something we need to send the next time
-			//xputs(PSTR("x"));			
+			xputs(PSTR("x"));			
 			return;
 		}
 
 		// Work out the next line
 		fifoLineCounter++;
 		// The odd field is 17 while even is 18 lines
-		if (fifoLineCounter>=(MAXLINE+evenfield)) // End of block? Start next field
+		if (fifoLineCounter>=(VBILINES /*+evenfield*/)) // End of block? Start next field
 		{
 			uint8_t index;
 			index=(fifoWriteIndex+1)%MAXFIFOINDEX;
 			if (index==fifoReadIndex)
 			{
 				packetToWrite=1; // Flag that packet has something we need to send the next time
-				// xputs(PSTR("X"));	
+				fifoLineCounter--; // And reset the line counter or we go out of sync
+				xputs(PSTR("X"));	
 				// xprintf(PSTR("X%d,%d "),fifoWriteIndex,fifoReadIndex);
 				return;	// FIFO Full
 			}

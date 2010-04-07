@@ -90,7 +90,7 @@ int GetSerialRamStatus(void)
 	return result;
 }
 
-void SetSerialRamAddress(unsigned char RWMode, int address)
+void SetSerialRamAddress(unsigned char RWMode, uint16_t address)
 {
 	for (int i=0;i<1000;i++)
 	{

@@ -170,7 +170,7 @@ ISR(TCE1_OVF_vect)
 {
 	uint16_t fifoReadAddress=fifoReadIndex*FIFOBLOCKSIZE;
 	uint8_t nextBlock;
-	uint8_t field=PORTC.IN&VBIT_FLD?1:0;
+	uint8_t field=PORTC.IN&VBIT_FLD?0:1;	// High on the even field
 	if (FIFOBusy) // Second time we need to set the FIFO to tx
 	{
 		// kill the clock so as not to let it bother us

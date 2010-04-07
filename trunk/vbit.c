@@ -396,6 +396,11 @@ int RunVBIT(void)
 	for (field=0;field<2;field++)
 		for (line=0;line<18;line++)
 			g_OutputActions[field][line]='I'; // Todo: Get these actions from INI
+	// For testing, make odd 2 and 3, and even 5 and 7 quiet
+	//g_OutputActions[0][2]='Q';
+	//g_OutputActions[0][2]='Q';
+	//g_OutputActions[1][5]='Q';
+	//g_OutputActions[1][7]='Q';
 
 	for (;;)
 	{
