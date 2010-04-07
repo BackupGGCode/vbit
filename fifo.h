@@ -52,7 +52,7 @@ void SetSerialRamStatus(unsigned char status);
 * After a call to this you can write or read 
 * To finish, DeselectSerialRam
 */
-void SetSerialRamAddress(unsigned char RWMode, int address);
+void SetSerialRamAddress(unsigned char RWMode, uint16_t address);
 /** Read the status word
  * The status word has mode bits in 6,7 and hold is bit 0
  * \return Status word
