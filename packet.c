@@ -225,7 +225,7 @@ static unsigned char copyOL(char *packet, char *textline)
 /** Fastext links
  * FL,<link red>,<link green>,<link yellow,<link cyan>,<link>,<link index>
  */
-static void copyFL(char *packet, char *textline)
+static void copyFL(char *packet, char *textline, PAGE *page)
 {
 	long nLink;
 	// add the designation code
