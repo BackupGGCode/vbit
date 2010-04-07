@@ -225,7 +225,7 @@ static unsigned char copyOL(char *packet, char *textline)
 /** Fastext links
  * FL,<link red>,<link green>,<link yellow,<link cyan>,<link>,<link index>
  */
-static void copyFL(char *packet, char *textline, PAGE *page)
+static void copyFL(char *packet, char *textline)
 {
 	long nLink;
 	// add the designation code
@@ -275,7 +275,6 @@ static unsigned char insert(char *packet, uint8_t field)
 	static FIL pagefile, list;
 	static uint8_t savefield;
 	static DWORD fileptr;		// Used to save the file pointer to the body of the ttx file
-	static PAGE page;
 	char pagename[15];
 	char listentry[25];
 	char data[80];
@@ -283,6 +282,7 @@ static unsigned char insert(char *packet, uint8_t field)
 	char *p;
 	unsigned char row;
 	FRESULT res;	
+	PAGE page;
 	BYTE drive=0;
 	DWORD pageptr;				// Pointer to the start of page in pages.all
 	DWORD pagesize;				// Size of the page in pages.all
@@ -357,7 +357,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		}
 		// xprintf(PSTR("M%d P%X, "),page.mag,page.page);
 		// create the header packet. TODO: Add a system wide header caption
-		Header(packet,page.mag,page.page,page.subpage,page.control,"VBIT Pocket Inserter            ");		// 6 - 24 characters plus 8 for clock
+		Header(packet,page.mag,page.page,page.subpage,page.control,"ORACLE 401 Wed07 Apr ITV        ");		// 6 - 24 characters plus 8 for clock
 		state[mag]=STATE_HEADER;
 		break;
 	case STATE_HEADER: // We are waiting for the field to change before we can tx
@@ -508,21 +508,21 @@ void FillFIFO(void)
 	static uint8_t packetToWrite=0; // Flags a left over packet that we need to send
 
 	// xputc(PORTC.IN&VBIT_FLD?'O':'E'); // Odd even indicator (just debug nonsense)
-	uint8_t oddfield; //=PORTC.IN&VBIT_FLD?1:0;	// Odd or even?
+	uint8_t evenfield; //=PORTC.IN&VBIT_FLD?1:0;	// Odd or even?
 
 	// Get the FIFO ready for new data
 	PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control
 	fifoWriteAddress=fifoWriteIndex*FIFOBLOCKSIZE+fifoLineCounter*PACKETSIZE;
 	SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO address to write to the current write address
+	evenfield=(fifoWriteIndex)%2;	
 	// xputs(PSTR("i"));	
-	oddfield=fifoWriteIndex%2;	
 	while(1) // loop until we hit a FIFO access conflict or the FIFO is full.
 	{
 		if (!packetToWrite) // If we have a packet to write then it is already in the buffer
 		{
-			oddfield=fifoWriteIndex%2;	// TODO: Check that this is odd or even
+			evenfield=(fifoWriteIndex)%2;	// TODO: Check that this is odd or even
 
-			action=g_OutputActions[oddfield][fifoLineCounter];
+			action=g_OutputActions[evenfield][fifoLineCounter];
 			// xputc(action);
 			switch (action)
 			{
@@ -544,7 +544,7 @@ void FillFIFO(void)
 			case '7' :;
 			case '8' :;
 				//xputs(PSTR("i"));			
-				insert(packet,oddfield);
+				insert(packet,evenfield);
 				break;
 			default: // Error! Don't know what to do. Make it quiet.
 				QuietLine(packet);
@@ -564,7 +564,7 @@ void FillFIFO(void)
 		// Work out the next line
 		fifoLineCounter++;
 		// The odd field is 17 while even is 18 lines
-		if (fifoLineCounter>=(MAXLINE+(oddfield?1:0))) // End of block? Start next field
+		if (fifoLineCounter>=(MAXLINE+evenfield)) // End of block? Start next field
 		{
 			uint8_t index;
 			index=(fifoWriteIndex+1)%MAXFIFOINDEX;
