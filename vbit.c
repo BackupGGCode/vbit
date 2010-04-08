@@ -343,16 +343,22 @@ static int vbit_command(char *Line)
 			*/
 			break;
 		}
-		if (Line[2]=='O' || Line[2]=='D') // QO[17 characters <P|Q|1..8|F>]. QD is the odd line
+		if (Line[2]=='O' || Line[2]=='D') // QO[17 characters <P|Q|1..8|F>]. QD is the odd line and has 18 lines
 		{
 			int i;
+			char ch;
 			ptr=&Line[3];
+			int field=0;
+			if (Line[2]=='D')
+				field=1;
 
 			// Validate it.
-			for (i=0;i<17;i++)
-				switch (*ptr++)
+			for (i=0;i<17+field;i++)
+			{
+				ch=*ptr++;
+				switch (ch)
 				{
-				case '1':;case'2':;case'3':;case'4':;case'5':;case'6':;case'7':;case'8':;
+				case '1':;case'2':;case'3':;case'4':;case'5':;case'6':;case'7':;case'8':;case'I':;
 				case'F':;
 				case'P':;
 				case'Q':;
@@ -360,6 +366,8 @@ static int vbit_command(char *Line)
 				default:
 					returncode=1;
 				}
+				g_OutputActions[field][i]=ch;
+			}
 			*ptr=0;
 			if (returncode) break;
 			n = ini_puts("service", "output", &Line[3], inifile);	
@@ -376,6 +384,15 @@ static int vbit_command(char *Line)
 	return 0;
 }
 
+/* Load settings from SD card
+ * inserter.ini
+*/
+int LoadINISettings(void)
+{
+	char str[30];
+	int n;
+	n = ini_gets("service", "output", "111Q2233P44556678Q", g_OutputActions[0], sizearray(g_OutputActions[0]), inifile);	
+}
 
 int RunVBIT(void)
 {
@@ -392,15 +409,7 @@ int RunVBIT(void)
 	i2c_init();			// Start the video processors
 	InitVBI();			// Set up the video timing
 	f_mount(0,&Fatfs[0]);
-
-	for (field=0;field<2;field++)
-		for (line=0;line<18;line++)
-			g_OutputActions[field][line]='I'; // Todo: Get these actions from INI
-	// For testing, make odd 2 and 3, and even 5 and 7 quiet
-	//g_OutputActions[0][2]='Q';
-	//g_OutputActions[0][2]='Q';
-	//g_OutputActions[1][5]='Q';
-	//g_OutputActions[1][7]='Q';
+	LoadINISettings();
 
 	for (;;)
 	{
