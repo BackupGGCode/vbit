@@ -160,7 +160,7 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 	packet[20]=mag+'0';
 	packet[21]=(page/0x10)+'0';
 	packet[22]=(page%0x10)+'0';
-	xputc(packet[20]); // Echo the mag for debugging
+	// xputc(packet[20]); // Echo the mag for debugging
 	// Stick the time in. Need to implement flexible date/time formatting
 	utc=UTC;
 	sec=utc%60;
@@ -499,6 +499,7 @@ void FillFIFO(void)
 				break;
 			default: // Error! Don't know what to do. Make it quiet.
 				QuietLine(packet);
+				g_OutputActions[evenfield][fifoLineCounter]='Q'; // Shut it up!
 				xputc('?');				
 			}
 		}
@@ -510,7 +511,7 @@ void FillFIFO(void)
 		if (FIFOBusy) // Can not write because the FIFO is busy
 		{
 			packetToWrite=1; // Flag that packet has something we need to send the next time
-			xputs(PSTR("x"));			
+			// xputs(PSTR("x"));			
 			return;
 		}
 
@@ -525,7 +526,7 @@ void FillFIFO(void)
 			{
 				packetToWrite=1; // Flag that packet has something we need to send the next time
 				fifoLineCounter--; // And reset the line counter or we go out of sync
-				xputs(PSTR("X"));	
+				// xputs(PSTR("X"));	
 				// xprintf(PSTR("X%d,%d "),fifoWriteIndex,fifoReadIndex);
 				return;	// FIFO Full
 			}
