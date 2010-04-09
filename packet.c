@@ -239,6 +239,7 @@ static void copyFL(char *packet, char *textline, PAGE *page)
 {
 	long nLink;
 	// add the designation code
+	char *p;
 	packet+=5;
 	packet+=HamTab[0];
 			 // work out what the magazine number for this page is
@@ -252,21 +253,27 @@ static void copyFL(char *packet, char *textline, PAGE *page)
 		if (*(textline-1)!=',')
 		{
 			return; // failed :-(
-		}	
-		xatoi(&textline,&nLink);
+		}
+		// page numbers are hex
+		p=textline-2;
+		*p='0';
+		*(p+1)='x';
+		xatoi(&p,&nLink);
 		//if (page->page==0 && page->mag==1)
 		//{
-		//	xprintf(PSTR("[copyFL]page 100 link:%ld\n"),nLink);
+//			xprintf(PSTR("[copyFL]page 100 link:%X\n"),nLink);
 		//}
-			// int nLink =StrToIntDef("0x" + strParams.SubString(1 + i*4,3),0x100);
+		// int nLink =StrToIntDef("0x" + strParams.SubString(1 + i*4,3),0x100);
+
+			
 					 // calculate the relative magazine
-			char cRelMag=(nLink/0x100 ^ cCurMag);
-			packet+=HamTab[nLink & 0xF];			// page units
-			packet+=HamTab[(nLink & 0xF0) >> 4];	// page tens
-			packet+=HamTab[0xF];									// subcode S1
-			packet+=HamTab[((cRelMag & 1) << 3) | 7];
-			packet+=HamTab[0xF];
-			packet+=HamTab[((cRelMag & 6) << 1) | 3];
+		char cRelMag=(nLink/0x100 ^ cCurMag);
+		packet+=HamTab[nLink & 0xF];			// page units
+		packet+=HamTab[(nLink & 0xF0) >> 4];	// page tens
+		packet+=HamTab[0xF];									// subcode S1
+		packet+=HamTab[((cRelMag & 1) << 3) | 7];
+		packet+=HamTab[0xF];
+		packet+=HamTab[((cRelMag & 6) << 1) | 3];
 	}	
 	// add the link control byte
 	packet+=HamTab[15];
@@ -460,6 +467,11 @@ void FillFIFO(void)
 
 	// xputc(PORTC.IN&VBIT_FLD?'O':'E'); // Odd even indicator (just debug nonsense)
 	uint8_t evenfield; //=PORTC.IN&VBIT_FLD?1:0;	// Odd or even?
+	
+	if (fifoWriteIndex==fifoReadIndex)
+	{
+		return;	// FIFO Full
+	}	
 
 	// Get the FIFO ready for new data
 	PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control
@@ -515,27 +527,27 @@ void FillFIFO(void)
 			return;
 		}
 
+		WriteSerialRam(packet, PACKETSIZE);	// Now we can put out the packet
+
 		// Work out the next line
 		fifoLineCounter++;
 		// The odd field is 17 while even is 18 lines
-		if (fifoLineCounter>=(VBILINES /*+evenfield*/)) // End of block? Start next field
+		if (fifoLineCounter>=(VBILINES+evenfield)) // End of block? Start next field
 		{
-			uint8_t index;
-			index=(fifoWriteIndex+1)%MAXFIFOINDEX;
-			if (index==fifoReadIndex)
-			{
-				packetToWrite=1; // Flag that packet has something we need to send the next time
-				fifoLineCounter--; // And reset the line counter or we go out of sync
-				// xputs(PSTR("X"));	
-				// xprintf(PSTR("X%d,%d "),fifoWriteIndex,fifoReadIndex);
-				return;	// FIFO Full
-			}
+			fifoWriteIndex=(fifoWriteIndex+1)%MAXFIFOINDEX;
 			fifoLineCounter=0;
-			fifoWriteIndex=index;
+			if (fifoWriteIndex==fifoReadIndex)
+			{
+				return;	// FIFO Full
+			}	
+
+			if (fifoWriteIndex==0) // We wrapped around, so set the address to zero
+			{
+				SetSerialRamAddress(SPIRAM_WRITE, 0); 	// Set FIFO address = 0
+			}
 		}	
 		// xputc(fifoLineCounter+'a');	// show the current line number
 		
-		WriteSerialRam(packet, PACKETSIZE);	// Now we can put out the packet
 	}
 	// Reset the FIFO ready to clock out TTX (vbi.c now does the switch)
 	//SetSerialRamAddress(SPIRAM_READ, 0); // Set the FIFO to read from address 0

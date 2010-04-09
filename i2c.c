@@ -134,7 +134,7 @@ uint8_t saa7121InitData[] = {
 0x75,0x00, // VS_S
 0x76,0x05, // TTXOVS=05 for PAL V odd start (line 5)
 0x77,0x16, // TTXOVE=16 for PAL V odd end (line 22)
-0x78,0x05, // TTXEVS=04 for PAL V even start (should be line 4) 
+0x78,0x04, // TTXEVS=04 for PAL V even start (should be line 4) 
 0x79,0x16, // TTXEVE=16 for PAL V even end (line 22)
 0x7a,0x00, // FAL
 0x7b,0x00, //
