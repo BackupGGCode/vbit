@@ -343,17 +343,16 @@ static int vbit_command(char *Line)
 			*/
 			break;
 		}
-		if (Line[2]=='O' || Line[2]=='D') // QO[17 characters <P|Q|1..8|F>]. QD is the odd line and has 18 lines
+		// QO does both odd and even. QD only does odd.
+		if (Line[2]=='O' || Line[2]=='D') // QO[18 characters <P|Q|1..8|F>].
+		// QD is the odd line only. Also supply 18 lines, but the last one is ignored
 		{
 			int i;
 			char ch;
 			ptr=&Line[3];
-			int field=0;
-			if (Line[2]=='D')
-				field=1;
 
 			// Validate it.
-			for (i=0;i<17+field;i++)
+			for (i=0;i<18;i++)
 			{
 				ch=*ptr++;
 				switch (ch)
@@ -366,12 +365,15 @@ static int vbit_command(char *Line)
 				default:
 					returncode=1;
 				}
-				g_OutputActions[field][i]=ch;
+				g_OutputActions[0][i]=ch;		// odd field
+				if (Line[2]=='O')
+					g_OutputActions[1][i]=ch;	// even field (QO only)
 			}
 			*ptr=0;
 			if (returncode) break;
-			n = ini_puts("service", "output", &Line[3], inifile);	
-			/** TBA. This setting needs to be in the packet section */
+			n = ini_puts("service", "outputodd", &Line[3], inifile);	
+			if (Line[2]=='O')
+				n = ini_puts("service", "outputeven", &Line[3], inifile);	// QO only
 			break;
 		}
 		returncode=1;
@@ -389,14 +391,13 @@ static int vbit_command(char *Line)
 */
 int LoadINISettings(void)
 {
-	char str[30];
 	int n;
-	n = ini_gets("service", "output", "111Q2233P44556678Q", g_OutputActions[0], sizearray(g_OutputActions[0]), inifile);	
+	n = ini_gets("service", "outputodd", "111Q2233P44556678Q", &(g_OutputActions[0][0]), 18, inifile);	
+	n = ini_gets("service", "outputeven", "111Q2233P44556678Q", &(g_OutputActions[1][0]), 18, inifile);	
 }
 
 int RunVBIT(void)
 {
-	unsigned char field, line;
 	/* Join xitoa module to USB-SPI bridge module */
 	xfunc_out = (void (*)(char))sendBridgeByteSD;
 	Term_Erase_Screen();
