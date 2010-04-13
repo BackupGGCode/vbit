@@ -1,27 +1,41 @@
-#summary VBIT Teletext Inserter.
+#summary Modifications to the vbit-3 board.
 
-= Introduction =
-VBIT is a teletext inserter. At the moment it is a CPU board and a video board. It is early days and I hope to release the designs and code soon. Why teletext just as it is going out of fashion? Not really any good reason except that it can be done inexpensively using modern components. It will enable people to continue using teletext after the networks shut it down.
+= Engineering Change Notes for vbit-3 =
 
-The processor board has a lot of spare I/O including a temperature sensor and A to D.
-
-http://farm5.static.flickr.com/4046/4467710031_c4ea82730c_d.jpg
+This was the first run of the board so there are some modifications required to make the board run. Pictures will be added.
 
 
-= Applications =
+= ECN 1 =
+The power supply is not sufficiently decoupled.
 
-So could you do with it (once you programmed it)?
- * Test signal generator
- * Databroadcast inserter
- * Cheap signage
- * Cheap information systems
- * Opt-out encoding
- * Mode 7 Tetris or Pong
- * Oscilloscope
- * Weather station
- * Model Railway indicator display
- * Twitter Feed
- * Graphics mode analogue clock
- * Kitchen timer
- * Screen saver
- * RSS alerts
+Additional decoupling is added in the form of 100uF surface mount electrolytics. These can be attached by scraping the solder resist from the top. Fit them in these locations.
+
+  * Above L1 between the +3V3 and ground.
+  * On the +3V3 line between L6 and ground
+
+= ECN 2 =
+The I2C SDA and SCL lines do not have sufficient pull-ups on them. The I2C has to run very slow without them.
+
+The most convenient place to attach these is on the +3V3 side of L1 and L2. Attach a 3k3 0805 resistor to L1, and another one to L2. Then using very fine wire, link the free end of each resistor and go through the SDA and SCL vias and attach to pins 7 and 8 of P5.
+
+= ECN 3 =
+It was found that a vital signal had been omitted from the FIFO. One signal from the AVR needs to be connected to the FIFO. The reset signal from the AVR to U2 pin 40 was disconnected and reattached to the FIFO. U2 instead has the reset line permanently pulled high.
+
+  * Remove R8
+  * Cut the trace from P5 - Pin 4.
+  * Connect pin 1 of the FIFO to pin 4 of P5. This is best done by connecting to the empty pad of R8, through the adjacent via and then direct to pin4 of P5.
+  * U2 Pin 40 is now floating. Use some wire wrap wire to connect this pin to the +3V3 line.
+
+= ECN 4 =
+It was found that the power through the IDC connector was very inadequate. The voltage was not enough to drive the SAA chips.
+
+Fit a two pin connector to Conn17 of the XMEGA board to pick up the 3V3 power. Connect the + to the power input side of L1. Connect the common to the common side of C12. An old PC is a very convenient source of ready made cables complete with connectors. The power and reset LEDs have the correct connector.
+
+= ECN 5 =
+For convenience in connecting the XMEGA to the VBIT boards a 10x2 way IDC ribbon connector is used. This cable must be kept short otherwise crosstalk will cause corrupted signals. If you have an XD200 board then you must cut the pair of pins XB6 and XB7 and also the pair of pins on Conn19. Then the 10x2 way cable can only fit one way on the XMEGA board.
+If you are using an XD300 then ask for the version that is not fitted with pins. Only fit the pins that you need. This is Conn16 and the Conn next to it that has PORT C XC0 to XC7.
+
+Be very careful when fitting the interconnection as a mistake will destroy the board.
+
+= ECN 6 =
+For XD200 XMEGA boards, J27 should be closed with a solder blob.
