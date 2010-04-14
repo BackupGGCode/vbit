@@ -4,11 +4,11 @@
 = Introduction =
 
 You'll need to build the hardware. You must have the ability to assemble surface mount boards and stick down TQFP chips with confidence. Unless this project really takes off I can not manufacture boards for you.
-If you want to develop code then be aware that this
+If you want to develop code then you will be pleased to hear that all tool chain is freely downloadable. The code is written entirely in C.
 
 = Hardware =
 The hardware is two parts. A processor board that you buy ready made and a video board that you will have to make.
-  * Buy the JM-XD200-USB board from http://xmega.mattair.net/index.html
+  * Buy the JM-XD300-USB board from http://xmega.mattair.net/index.html
   * You'll also need a miniusb cable to go with it.
   * A VBIT board. Contact me if you want to buy a bare board. I have a few in stock made by Beta Layout. They do need a few patches.
   * The project has circuit diagrams, gerbers and a bill of materials that I will post if anyone needs it.
@@ -19,7 +19,7 @@ The software is in three broad categories, namely tools, libraries and source co
   * Atmel AVR Studio 4. Used for programming the XMEGA via the AVRISP simulator.
   * Atmel Flip. Used for programming the AVR USB SPI Bridge.
   * WinAVR. The toolchain including compiler and linker
-  * You may also like to download the demo code for the JM-SD200-USB board as it contains many useful examples and it may have better USB bridge code.
+  * You may also like to download the demo code for the JM-XD200-USB board as it contains many useful examples and it may have better USB bridge code.
 ==Libraries==
 These libraries may need to be installed.
   * LUFA is the Lightweight USB Framework for AVRs.
