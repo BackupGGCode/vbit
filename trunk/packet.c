@@ -475,7 +475,7 @@ void FillFIFO(void)
 
 	// Get the FIFO ready for new data
 	PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control
-	fifoWriteAddress=fifoWriteIndex*FIFOBLOCKSIZE+fifoLineCounter*PACKETSIZE;
+	fifoWriteAddress=fifoWriteIndex*FIFOBLOCKSIZE+fifoLineCounter*PACKETSIZE; 
 	SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO address to write to the current write address
 	evenfield=(fifoWriteIndex)%2;	
 	// xputs(PSTR("i"));	
