@@ -321,7 +321,8 @@ static int vbit_command(char *Line)
 				returncode=1;
 		case 'O': // EO - Output dataline actions set by QO
 			// 17 characters on a line
-			n = ini_gets("service", "output", "111Q2233P44556678", str, sizearray(str), inifile);	
+			n = ini_gets("service", "outputodd", "111Q2233P445566778", str, sizearray(str), inifile);	
+			n = ini_gets("service", "outputeven", "111Q2233P445566778", str, sizearray(str), inifile);	
 			xprintf(PSTR("%s"),str);
 			break;
 		}		
@@ -343,9 +344,9 @@ static int vbit_command(char *Line)
 			*/
 			break;
 		}
-		// QO does both odd and even. QD only does odd.
-		if (Line[2]=='O' || Line[2]=='D') // QO[18 characters <P|Q|1..8|F>].
-		// QD is the odd line only. Also supply 18 lines, but the last one is ignored
+		// QO sets both odd and even lines
+		// QD only sets the odd.
+		if (Line[2]=='O' || Line[2]=='D') // QO[18 characters <P|Q|1..8|F>]. QD is the odd line and has 18 lines
 		{
 			int i;
 			char ch;
