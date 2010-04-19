@@ -120,18 +120,28 @@ void FillerPacket(char *packet)
 	Parity(packet,5);
 } // FillerPacket
 
-/** All the bits on this line are off
+/** All the bits on this line are off, if code is 0
+ * Otherwise the low 4 bits are used for a pattern to aid debugging using a 'scope.
  */
-void QuietLine(char * packet)
+void QuietLine(char * packet, uint8_t code)
 {
 	const unsigned char debug=1;
+	code&=0x0f;
 	for (int i=0;i<PACKETSIZE;i++)
 		if (debug)
 		{
-			packet[i]=(i%10)>5?0xff:0x00; // Insert a recognisable waveform for the scope
+			// packet[i]=(i%10)>5?0xff:0x00; // Insert a recognisable waveform for the scope
+			if (i%11==0)
+				code>>=1;
+			if (i%11>5)
+				packet[i]=code&1?0xff:0;
+			else
+				packet[i]=0;
 		}
 		else		
+		{
 			packet[i]=0;
+		}
 } // QuietLine
 
 /** A header has mag, row=0, page, flags, caption and time
@@ -381,7 +391,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		//xputs(PSTR("H"));
 		if (field==savefield)
 		{
-			QuietLine(packet);	// TODO: We would let the next magazine steal this line
+			QuietLine(packet,0x0f);	// TODO: We would let the next magazine steal this line
 			break;
 		}
 		state[mag]=STATE_SENDING; // We have the new field. Change state
@@ -495,7 +505,8 @@ void FillFIFO(void)
 			case 'P' :;	// Pass through does nothing. It is configured in I2C Lines
 						// Also it is not implemented yet. TODO
 			case 'Q' : 	// Quiet Line
-				QuietLine(packet);
+				QuietLine(packet,0x0e|(evenfield?1:0));
+
 				break;
 			case 'I' :; // Insert
 			case '1' :;
@@ -510,7 +521,7 @@ void FillFIFO(void)
 				insert(packet,evenfield);
 				break;
 			default: // Error! Don't know what to do. Make it quiet.
-				QuietLine(packet);
+				QuietLine(packet,0x06);
 				g_OutputActions[evenfield][fifoLineCounter]='Q'; // Shut it up!
 				xputc('?');				
 			}
