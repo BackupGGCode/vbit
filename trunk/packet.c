@@ -494,9 +494,10 @@ void FillFIFO(void)
 		if (!packetToWrite) // If we have a packet to write then it is already in the buffer
 		{
 			evenfield=(fifoWriteIndex)%2;	// TODO: Check that this is odd or even
+			//xputc((evenfield&1)+'0');	
 
 			action=g_OutputActions[evenfield][fifoLineCounter];
-			// xputc(action);
+			//xputc(action);
 			switch (action)
 			{
 			case 'F' : // Filler 825
@@ -551,11 +552,9 @@ void FillFIFO(void)
 			{
 				return;	// FIFO Full
 			}	
-
-			if (fifoWriteIndex==0) // We wrapped around, so set the address to zero
-			{
-				SetSerialRamAddress(SPIRAM_WRITE, 0); 	// Set FIFO address = 0
-			}
+			// Set the next SPI RAM address
+			fifoWriteAddress=fifoWriteIndex*FIFOBLOCKSIZE+fifoLineCounter*PACKETSIZE; 
+			SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO next address
 		}	
 		// xputc(fifoLineCounter+'a');	// show the current line number
 		
