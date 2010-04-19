@@ -320,7 +320,7 @@ static int vbit_command(char *Line)
 			default:
 				returncode=1;
 		case 'O': // EO - Output dataline actions set by QO
-			// 17 characters on a line
+			// 18 characters on a line, but odd ignores last action
 			n = ini_gets("service", "outputodd", "111Q2233P445566778", str, sizearray(str), inifile);	
 			n = ini_gets("service", "outputeven", "111Q2233P445566778", str, sizearray(str), inifile);	
 			xprintf(PSTR("%s"),str);
