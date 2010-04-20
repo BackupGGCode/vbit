@@ -56,4 +56,10 @@ unsigned char ParseLine(PAGE *page, char *str);
  */
 unsigned char ParsePage(PAGE *page, char *filename);
 
+/** Clear a page structure
+ * The mag is set to 0x99 as a signal that it is not valid
+ * \param page - Pointer to PAGE structure
+ */
+void ClearPage(PAGE *page);
+
 #endif

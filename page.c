@@ -79,6 +79,7 @@ unsigned char ParseLine(PAGE *page, char *str)
 			page->page=n%0x100;	
 			if (page->mag>8)
 			{
+				xprintf(PSTR("error in line %s\n"),str);
 				return 1;
 			}
 			// xprintf(PSTR("[ParseLine]PN mag=%d page=%X, subpage=%X\n"),page->mag,page->page,page->subpage);
@@ -146,4 +147,15 @@ unsigned char ParsePage(PAGE *page, char *filename)
 	f_close(&file);
 	// xprintf(PSTR("[Parse page]Ended\n"));	
 	return 0;
+}
+
+void ClearPage(PAGE *page)
+{
+	page->filename[0]=0;
+	page->mag=0x99;
+	page->page=0xff;
+	page->subpage=0xff;
+	page->timerMode='T';
+	page->control=0;
+	page->filesize=0;
 }
