@@ -302,6 +302,7 @@ static unsigned char insert(char *packet, uint8_t field)
 	static FIL pagefile, list;
 	static uint8_t savefield;
 	static DWORD fileptr;		// Used to save the file pointer to the body of the ttx file
+	static PAGE page;
 	char pagename[15];
 	char listentry[25];
 	char data[80];
@@ -309,7 +310,6 @@ static unsigned char insert(char *packet, uint8_t field)
 	char *p;
 	unsigned char row;
 	FRESULT res;	
-	PAGE page;
 	BYTE drive=0;
 	DWORD pageptr;				// Pointer to the start of page in pages.all
 	DWORD pagesize;				// Size of the page in pages.all
@@ -367,6 +367,7 @@ static unsigned char insert(char *packet, uint8_t field)
 			put_rc(res);
 			return 1;
 		}	
+		ClearPage(&page); // Clear the page parameters (not strictly required)
 		// Loop through the header and parse down to the OL
 		while (pagefile.fptr<(pageptr+pagesize))
 		{

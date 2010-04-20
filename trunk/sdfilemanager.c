@@ -55,10 +55,10 @@ void SDCreateLists(int mag, unsigned int pagecount)
 	FIL pagesfile;
 	FIL currentpage;
 	DIR dir;			/* Directory object */
-	UINT s1, s2, i;	
+	UINT s1, s2;	
 	char filename[80];
 	char str[80];
-	char *ptr;
+	char *ptr=0;
 	FRESULT res;	
 	FATFS *fs;
 	PAGE page;
