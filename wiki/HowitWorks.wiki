@@ -1,0 +1,16 @@
+#summary Overview of how the VBIT inserter works
+
+= VBIT  =
+
+The aims of vbit are to make an inserter with the minimum of components, that does not need any calibration and has an open source or at least a free tool chain.
+
+
+==Circuit overview==
+
+The video path is as follows. The PAL video input is digitised and turned into parallel CCIR601. The parallel video is immediately encoded back into PAL and output. The encoder also has a port for teletext consisting of a clock out and a data input. When text is required, the clock sends out strobes to the FIFO which returns each bit to be encoded.
+
+Now a FIFO is usually an expensive item but in this case a standard serial ram is used. And unlike a FIFO it can not read and write at the same time. But we do not need to read and write at the same time. This is because out of each field period of 20ms, only 1ms is required for vbi leaving 19ms for the processor to fill the FIFO.
+
+This is where the fourth chip comes in. Normally this would be some big FPGA controlling all the signal lines and producing all sorts of clocks but in this case it is a humble quad nand gate. It is wired as a multiplexor 
+
+==Controller Interface==
