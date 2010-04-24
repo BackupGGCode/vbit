@@ -1,4 +1,5 @@
 #summary Overview of how the VBIT inserter works
+#labels Phase-Implementation
 
 = VBIT  =
 
@@ -7,10 +8,22 @@ The aims of vbit are to make an inserter with the minimum of components, that do
 
 ==Circuit overview==
 
+The processor and VBIT circuit are connected with these signals:
+ * I2C - Used to configure the video decoder and encoder.
+ * SPI - Used to control the serial RAM
+ * ODDFLD - A bit from the decoder that indicates which is the current field
+ * AVRSEL - A bit from the processor that switches the multiplex between AVR and the encoder
+
 The video path is as follows. The PAL video input is digitised and turned into parallel CCIR601. The parallel video is immediately encoded back into PAL and output. The encoder also has a port for teletext consisting of a clock out and a data input. When text is required, the clock sends out strobes to the FIFO which returns each bit to be encoded.
 
 Now a FIFO is usually an expensive item but in this case a standard serial ram is used. And unlike a FIFO it can not read and write at the same time. But we do not need to read and write at the same time. This is because out of each field period of 20ms, only 1ms is required for vbi leaving 19ms for the processor to fill the FIFO.
 
-This is where the fourth chip comes in. Normally this would be some big FPGA controlling all the signal lines and producing all sorts of clocks but in this case it is a humble quad nand gate. It is wired as a multiplexor 
+This is where the fourth chip comes in. Normally this would be some big FPGA controlling all the signal lines and producing all sorts of clocks but in this case it is a humble quad nand gate. It is wired as a multiplexer that takes a clock from either the processor or the encoder. This is the sequence of how everything works:
+ * The field bit changes state. This starts a timer that waits until the end of the vbi.
+ * The vbi ends and the timer is set to wait until a short while before the next vbi starts.
+ * Meanwhile the multiplexer is switched to the processor. The processor then fills up the FIFO with teletext packets. This continues until either the FIFO is full or the next vbi is about to start.
+ * The serial ram address is then set up for the next field and it is switched into read mode. Then the multiplexer is switched to the encoder.
+ * The encoder clocks out up to 18 teletext packets from the serial ram.
+ * While the vbi is being transmitted the field bit changes state and the cycle starts again.
 
-==Controller Interface==
+So as you can see, what ever the processor manages to put in the FIFO is what gets transmitted so a full text service of packet 8/30, databroadcast, opt-out signalling etc. is possible. You just have to fill the FIFO with what you want.
