@@ -92,8 +92,11 @@ extern unsigned char BitRev[16];
 #define LenMragMagEntry	56
 
 extern const char MragTable[8][LenMragMagEntry];
-/*----------------------------------------------
-*------------------------------------------
+/*----------------------------------------------*/
+extern const char TL[];
+extern const char TH[];
+/*------------------------------------------*/
+/*
 *CRC lookup tables
 *high byte table
 
