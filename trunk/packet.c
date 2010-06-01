@@ -522,6 +522,9 @@ void FillFIFO(void)
 				//xputs(PSTR("i"));			
 				insert(packet,evenfield);
 				break;
+			case 'Z' :
+				DataBroadcast();
+				break;
 			default: // Error! Don't know what to do. Make it quiet.
 				QuietLine(packet,0x06);
 				g_OutputActions[evenfield][fifoLineCounter]='Q'; // Shut it up!
