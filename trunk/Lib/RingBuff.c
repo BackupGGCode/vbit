@@ -98,6 +98,11 @@ RingBuff_Data_t Buffer_GetElement(RingBuff_t* const Buffer)
 	return BuffData;
 }
 
+int Buffer_IsEmpty(RingBuff_t* const Buffer)
+{
+	return Buffer->Elements==0;	
+}
+
 #if defined(BUFF_USEPEEK)
 RingBuff_Data_t Buffer_PeekElement(const RingBuff_t* const Buffer)
 {

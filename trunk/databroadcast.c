@@ -45,7 +45,7 @@ char* putringstring(char* str)
 		Buffer_StoreElement(&buffer, *c);
 		if (1<0) // TODO: Check full!
 		{
-			return *c;
+			return c;
 		}
 	}
 	return 0;
@@ -56,71 +56,62 @@ void InitDataBroadcast(void)
 	Buffer_Initialize(&buffer);
 }
 
-
 //--------------------------------------------------------
-/** Send Presfax data as packet 8/31 
- * new routine that sends each event as fixed length strings in three packets
- * with repeats
- * The last packet contains the schedule filename
- * \return value is not used
+/** Send databroadcast as packet 8/31 
+ * This routine takes data from the ring buffer and places it into a packet.
+ * \param pkt : pointer to a char buffer that must be at least 45 characters long
+ * \return 1 if there is nothing to send, or 0 if there is a valid packet.
  */
-int SendNewPresfax(void)
+int SendDataBroadcast(char* pkt)
 {
 	int i;
-	//CRC *HorizontalChecksum;
-	char resp[100];
-	int event;
 	int packet;
 
 	static unsigned char continuity = 0;
 
+	// Do we have any data to send?
+	if (Buffer_IsEmpty(&buffer))
+		return 1;
+
+	
 	// Assemble the basic packet 8/31
-	unsigned char pkt[46] = 
-	{
-	    44,                              // 1: data length
-		0,                               // 2: line number
-		27,                              // 3: framing code
-		HamTab[11],HamTab[0xf],          // 4,5: mrag for packet 8/31. data channel, desig. code
-		HamTab[6],                       // 6 Format type set to format 1 
-									   // with explicit continuity and repeats
-		HamTab[1],                       // 7 address length of 1 (IAL)
-		HamTab[nServicePacketAddress],   // 8 address of 2 (Single nibble SPA default=2)
-		0x80,                            // 9 First repeat 
-		0,                               // 10 Continuity indicator
-		' ',' ',' ',' ',' ',' ',' ',' ', // 11-43 33 payload bytes
-		' ',' ',' ',' ',' ',' ',' ',' ', 
-		' ',' ',' ',' ',' ',' ',' ',' ', 
-		' ',' ',' ',' ',' ',' ',' ',' ', 
-		' ',
-		0xfe,0xff,                     // 44,45 CRC Bytes
-		0
-	};                            // string terminator
-	unsigned char cmd[80] = {0xe,'0','d',0x80}; // 0x80 Data Broadcast Packet 8/31
+	// Note that the comment numbers are one higher than the array index. 
+	char* p=pkt;
+	*(p++)=0x55;						// 1: clock run in
+	*(p++)=0x55;                        // 2: clock run in
+	*(p++)=27;							// 3: framing code
+	*(p++)=HamTab[11];					// 4: mrag for 8/31. data channel. designation code.
+	*(p++)=HamTab[0x0f];				// 5:
+	*(p++)=HamTab[6];					// 6: Format type set to format 1 with explicit continuity and repeats
+	*(p++)=HamTab[1];					// 7: address length of 1 (IAL)
+	*(p++)=HamTab[9];					// 8: address 9. (For SISCom)
+	*(p++)=0x80;						// 9: first repeat
+	*(p++)=0;							// 10: continuity indicator
+	for (i=9;i<43;i++)					// 11-43: 33 payload bytes
+		*(p++)=' ';
+	*(p++)=0xfe;						// 44: Hi checksum
+	*(p++)=0xff;						// 45: Lo checksum
 
 	// initialise the checksum
-	// HorizontalChecksum=new CRCA();
+	ClearCRC();
 
 	// add first set of data into the packet
 	pkt[8]  = 0x80;
-	pkt[9]  = continuity;
+	pkt[9]  = continuity;		// Ummm, what about repeats? Worry about that later 
 
-	// TODO: Copy the as much payload as we can
-	uint8_t ch=Buffer_GetElement(&buffer); // Something like this
+	// Copy as much of the payload as we can
 	
 	// Calculate the CRCs 
-	for (i = 9; i < 43; i++)
-		Add(pkt[i]);
+	for (i=9;i<43;i++)
+	{
+		pkt[i]=Buffer_GetElement(&buffer); 	// What about partial lines?
+		AddCRC(pkt[i]);
+	}
 
 	// add it to the end
 	EndPacket(&pkt[43],&pkt[44]);
 
-	// copy the packet into the output command, escaping characters as we go and adding to the command checksum
-	copypacket(cmd,pkt);
-
-	// send it to the inserter
-	transact((char*)cmd,resp);
-
 	// TODO: Repeats
 	
-	return(0);
-}//SendNewPresfax
+	return 0;
+}//SendDataBroadcast

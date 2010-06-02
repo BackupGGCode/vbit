@@ -5,10 +5,10 @@
   unsigned char m_HiByte;
   unsigned char m_LoByte;
   
-  void Clear(void){m_HiByte=0;m_LoByte=0;};
+  void ClearCRC(void);
   unsigned char GetHi(void);
   unsigned char GetLo(void);
-  void Add(unsigned char c);  
+  void AddCRC(unsigned char c);  
   void EndPacket(unsigned char *Hi,unsigned char *Lo);
 
 #endif

@@ -41,8 +41,8 @@
      // #define BUFF_NODROPCHECK      // Uncomment to ignore full ring buffer checks - checking left to user!
 
    /* Underflow behaviour - select behaviour when Buffer_GetElement is called with an empty ring buffer: */
-     //#define BUFF_EMPTYRETURNSZERO  // Uncomment to return 0 when an empty ring buffer is read
-     #define BUFF_NOEMPTYCHECK        // Uncomment to disable checking of empty ring buffers - checking left to user!
+     #define BUFF_EMPTYRETURNSZERO  // Uncomment to return 0 when an empty ring buffer is read
+     //#define BUFF_NOEMPTYCHECK        // Uncomment to disable checking of empty ring buffers - checking left to user!
 	
    /* Buffer storage type - set the datatype for the stored data */
      #define BUFF_DATATYPE uint8_t    // Change to the data type that is going to be stored into the buffer
@@ -112,5 +112,6 @@
 	#if defined(BUFF_USEPEEK)
 		RingBuff_Data_t Buffer_PeekElement(const RingBuff_t* const Buffer);
 	#endif
+	int Buffer_IsEmpty(RingBuff_t* const Buffer);
 	
 #endif
