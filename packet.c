@@ -523,7 +523,8 @@ void FillFIFO(void)
 				insert(packet,evenfield);
 				break;
 			case 'Z' :
-				DataBroadcast();
+				if (SendDataBroadcast(packet))
+					insert(packet,evenfield);	// Secondary action. You might have other ideas
 				break;
 			default: // Error! Don't know what to do. Make it quiet.
 				QuietLine(packet,0x06);

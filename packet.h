@@ -53,6 +53,7 @@
 #include "vbit.h"
 #include "fifo.h"
 #include "vbi.h"
+#include "databroadcast.h"
 #include "../SDCard/ff.h"
 #include "../SDCard/diskio.h"
 
