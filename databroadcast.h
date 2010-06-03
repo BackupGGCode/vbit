@@ -30,4 +30,6 @@ void InitDataBroadcast(void);
  */
 int SendDataBroadcast(char* pkt);
 
+char* putringstring(char* str);
+
 #endif
