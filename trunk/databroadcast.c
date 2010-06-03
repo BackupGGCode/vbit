@@ -65,7 +65,6 @@ void InitDataBroadcast(void)
 int SendDataBroadcast(char* pkt)
 {
 	int i;
-	int packet;
 
 	static unsigned char continuity = 0;
 

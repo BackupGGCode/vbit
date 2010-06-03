@@ -69,6 +69,10 @@ void FieldInterruptHandler(void)
 		UTC++;
 		if (UTC>=day)
 			UTC=0;
+		// SISCom databroadcast fader
+		// This is only one command sent once a second to exercise the receiver
+		// We need a command to change the string
+		putringstring("\016fade,0,1\n");
 	}
 	
 	// What is the state of PINC.2

@@ -42,6 +42,8 @@
 #include "avr_compiler.h"
 #include "xitoa.h"
 #include "vbit.h"
+#include "databroadcast.h"
+
 extern volatile uint8_t vbiDone; /// Goes high when the vbi has been transmitted
 extern volatile uint32_t UTC; /// Universal Coordinated Time
 void InitVBI(void);
