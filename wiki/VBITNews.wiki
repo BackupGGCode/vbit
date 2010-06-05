@@ -1,0 +1,6 @@
+#summary VBIT News.
+#labels Phase-Requirements
+
+= 05 June 2010 =
+Found a mistake in packet.c that caused VBIT to lock up.
+Adding databroadcast. Currently this sends short text messages that a special decoder can pick up.
