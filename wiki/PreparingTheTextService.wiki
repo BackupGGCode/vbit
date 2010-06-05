@@ -13,7 +13,7 @@ The individual pages are all bundled up into a single big file called pages.all.
 
 To make pages.all use a PC to make an onair folder in the root of the SD card. Then put all of your tti files in there. Then back on on the XMEGA with the card installed send the C command. This is with the usual command method which you would type into the console as
 <CTRL-N>0C<Enter>
-This process takes a few minutes on a big service but when it finishes you may restart the inserter and your service will be transmitted. It also generates an index file called mag1.lst. The idea is that in future each magazine and carousel will have a lst file. At the moment all of the pages are indexed in mag1.lst.
+This process takes a few minutes on a big service but when it finishes you may restart the inserter and your service will be transmitted. It also generates an index file called mag1.lst. The idea is that in future each magazine and carousel will have a lst file. At the moment all of the pages are indexed in mag1.lst. One tip is to disconnect the video in while you are preparing a card. This prevents field interrupts from slowing down the AVR.
 
 Obviously this makes live updates a little tricky. I'm thinking that if we allocate each page a fixed amount of memory, then we could write modified pages without having to remake pages.all each time. Or we could use the SPIRAM on the XMEGA board to store dynamic pages so we wouldn't need to mess with the file system. 
 
