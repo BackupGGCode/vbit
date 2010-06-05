@@ -17,5 +17,7 @@ This process takes a few minutes on a big service but when it finishes you may r
 
 Obviously this makes live updates a little tricky. I'm thinking that if we allocate each page a fixed amount of memory, then we could write modified pages without having to remake pages.all each time. Or we could use the SPIRAM on the XMEGA board to store dynamic pages so we wouldn't need to mess with the file system. 
 
+Another solution which has been done in the past is to use a PC to generate the text data and just play it immediately. So you would send packets down the USB. These would get buffered in the FIFO. There would be no other local storage. The downside of this is that you would need a PC working all the time to deliver the service. The upside is that the inserter firmware would be very simple and the service very flexible. It is easier to get a PC to generate the service.
+
 You are free to write a better solution and are most welcome to post it back here.
  
