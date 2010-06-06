@@ -362,6 +362,7 @@ static int vbit_command(char *Line)
 				case'F':;
 				case'P':;
 				case'Q':;
+				case'Z':;
 					break;
 				default:
 					returncode=1;
@@ -412,7 +413,7 @@ int RunVBIT(void)
 	InitVBI();			// Set up the video timing
 	f_mount(0,&Fatfs[0]);
 	LoadINISettings();
-
+	InitDataBroadcast();
 	for (;;)
 	{
 		xputc('>');

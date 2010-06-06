@@ -59,6 +59,8 @@ void FieldInterruptHandler(void)
 	const uint32_t day=(uint32_t)60*60*24;
 	LED_On( LED_3 ); // Got a field interrupt (video OK)
 	static int count=0;
+	static int secs=0;
+	char str[20];
 	count++;
 	/*if ((count%50)==0)
 		xputs(PSTR("."));
@@ -71,8 +73,10 @@ void FieldInterruptHandler(void)
 			UTC=0;
 		// SISCom databroadcast fader
 		// This is only one command sent once a second to exercise the receiver
-		// We need a command to change the string
-		putringstring("\016fade,0,1\n");
+		// Toggle the fade direction every 5 seconds
+		strcpy(str,"\016fade,0,3\n");
+		str[6]=((UTC/5)%2==0)?'1':'0';
+		putringstring(str);
 	}
 	
 	// What is the state of PINC.2

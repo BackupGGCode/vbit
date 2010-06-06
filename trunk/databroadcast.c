@@ -11,8 +11,6 @@ char nic2[6];
 
 char ChecksumFormat='A';// Or B
 
-int g_GSM[2];           /// Format 1 and 2 values for the GSM command
-
 int nServicePacketAddress;  /// Address can be 0 to 15 (default 2)
 
 char strLabel830[40];       /// The current packet 830 label, eg "BBC ONE"
@@ -30,7 +28,7 @@ int abs(int no)
   return (no<0)?(no*-1):no;
 } 
 
-static RingBuff_t buffer;
+static RingBuff_t DBbuffer;
 
 /** Send a string to the ring buffer
  * \param str : String to send to the ring buffer
@@ -39,21 +37,26 @@ static RingBuff_t buffer;
  */
 char* putringstring(char* str)
 {
-	char *c;
-	for (c=&(str[0]);*c;c++)
+	// xputs(PSTR("P"));
+	char *c=str;
+	for (;*c;c++)
 	{
-		Buffer_StoreElement(&buffer, *c);
-		if (1<0) // TODO: Check full!
+		// xputc(*c);
+		if (Buffer_IsFull(&DBbuffer))
 		{
+			// TODO: do handshaking? maybe XON/XOFF?
+			// xputs(PSTR("full\n"));	
 			return c;
 		}
+		else
+			Buffer_StoreElement(&DBbuffer, *c);
 	}
 	return 0;
 } // putringstring
 
 void InitDataBroadcast(void)
 {
-	Buffer_Initialize(&buffer);
+	Buffer_Initialize(&DBbuffer);
 }
 
 //--------------------------------------------------------
@@ -65,28 +68,33 @@ void InitDataBroadcast(void)
 int SendDataBroadcast(char* pkt)
 {
 	int i;
-
 	static unsigned char continuity = 0;
 
-	// Do we have any data to send?
-	if (Buffer_IsEmpty(&buffer))
-		return 1;
+	//xputc('D');
 
+	// Do we have any data to send?
+	if (Buffer_IsEmpty(&DBbuffer))
+	{
+		return 1;
+	}
+	
+	//xputc('B');
 	
 	// Assemble the basic packet 8/31
 	// Note that the comment numbers are one higher than the array index. 
 	char* p=pkt;
 	*(p++)=0x55;						// 1: clock run in
 	*(p++)=0x55;                        // 2: clock run in
-	*(p++)=27;							// 3: framing code
-	*(p++)=HamTab[11];					// 4: mrag for 8/31. data channel. designation code.
+	*(p++)=0x27;						// 3: framing code
+	*(p++)=HamTab[0x08];				// 4: mrag for 8/31. data channel. designation code.
 	*(p++)=HamTab[0x0f];				// 5:
-	*(p++)=HamTab[6];					// 6: Format type set to format 1 with explicit continuity and repeats
-	*(p++)=HamTab[1];					// 7: address length of 1 (IAL)
-	*(p++)=HamTab[9];					// 8: address 9. (For SISCom)
-	*(p++)=0x80;						// 9: first repeat
-	*(p++)=0;							// 10: continuity indicator
-	for (i=9;i<43;i++)					// 11-43: 33 payload bytes
+	//  Need to implement DL
+	*(p++)=HamTab[0];					// 6: FT Format type set to format 1 with implicit continuity and no repeats
+	*(p++)=HamTab[1];					// 7: IAL address length of 1 (IAL)
+	*(p++)=HamTab[9];					// 8: SPA address 9. (For SISCom)
+	// *(p++)=0x00; //						// 9: no repeat
+	//*(p++)=continuity++;				// 10: continuity indicator
+	for (i=8;i<43;i++)					// 11-43: 33 payload bytes
 		*(p++)=' ';
 	*(p++)=0xfe;						// 44: Hi checksum
 	*(p++)=0xff;						// 45: Lo checksum
@@ -94,16 +102,21 @@ int SendDataBroadcast(char* pkt)
 	// initialise the checksum
 	ClearCRC();
 
-	// add first set of data into the packet
-	pkt[8]  = 0x80;
-	pkt[9]  = continuity;		// Ummm, what about repeats? Worry about that later 
-
 	// Copy as much of the payload as we can
 	
-	// Calculate the CRCs 
-	for (i=9;i<43;i++)
+	// insert the payload
+	for (i=8;i<43;i++)
 	{
-		pkt[i]=Buffer_GetElement(&buffer); 	// What about partial lines?
+		if (Buffer_IsEmpty(&DBbuffer))
+			pkt[i]='\0';
+		else
+			pkt[i]=Buffer_GetElement(&DBbuffer); 	// What about partial lines?
+		// xputs(PSTR(" char="));
+		// xputc(pkt[i]);
+	}
+	// Calculate the CRCs 
+	for (i=8;i<43;i++)
+	{
 		AddCRC(pkt[i]);
 	}
 

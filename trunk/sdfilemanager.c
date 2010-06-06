@@ -32,6 +32,7 @@ char Lfname[_MAX_LFN+1];
 void put_rc (FRESULT rc)
 {
 	const prog_char *p;
+	if (rc==0) return;
 	static const prog_char str[] =
 		"OK\0" "DISK_ERR\0" "INT_ERR\0" "NOT_READY\0" "NO_FILE\0" "NO_PATH\0"
 		"INVALID_NAME\0" "DENIED\0" "EXIST\0" "INVALID_OBJECT\0" "WRITE_PROTECTED\0"
