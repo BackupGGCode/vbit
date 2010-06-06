@@ -50,6 +50,7 @@
 #include "fifo.h"
 #include "i2c.h"
 #include "vbi.h"
+#include "databroadcast.h"
 		
 #include "../../Common/Terminal/TerminalDriver.h"
 #include "../../Common/Terminal/TerminalEvents.h"		

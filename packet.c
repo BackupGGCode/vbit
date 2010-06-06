@@ -309,7 +309,7 @@ static unsigned char insert(char *packet, uint8_t field)
 	char *str;
 	char *p;
 	unsigned char row;
-	FRESULT res;	
+	FRESULT res=0;	
 	BYTE drive=0;
 	DWORD pageptr;				// Pointer to the start of page in pages.all
 	DWORD pagesize;				// Size of the page in pages.all
@@ -318,7 +318,7 @@ static unsigned char insert(char *packet, uint8_t field)
 	switch (state[mag])
 	{
 	case STATE_BEGIN: // Open the first page and drop through to idle
-		xputs(PSTR("B"));
+		// xputs(PSTR("B"));
 	
 		res=(WORD)disk_initialize(drive);	// di0
 		put_rc(f_mount(drive, &Fatfs[drive]));	// fi0
@@ -348,7 +348,7 @@ static unsigned char insert(char *packet, uint8_t field)
 			xatoi(&p,&pagesize);		
 			//xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);					
 		}
-		xprintf(PSTR("\n\rf=%s\n\r"),pagename);		
+		// xprintf(PSTR("\n\rf=%s\n\r"),pagename);		
 		state[mag]=STATE_IDLE;
 		res=f_open(&pagefile,"pages.all",FA_READ);		// Only need to open this once!
 	case STATE_IDLE: // If permitted to run we send the header
@@ -458,11 +458,31 @@ static unsigned char insert(char *packet, uint8_t field)
 		break;
 	default: // Not sure what to do. This can never happen
 		state[mag]=STATE_BEGIN;
-		xputc('!');
+		xputc('?');	// Oh dear
 	}	
 	return 0; // success
 } // insert
 
+void dump(char* p)
+{
+	int i;
+	int j=0;
+	for (i=0;i<5;i++)
+	{
+		xprintf(PSTR("%02X "),*p++);
+					//xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);	
+	}
+	xputc('\n');
+	for (j=0;j<4;j++)
+	{
+		for (i=0;i<10;i++)
+		{
+			xprintf(PSTR("%02X "),*p++);
+						//xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);	
+		}
+		xputc('\n');
+	}
+}
 
 /** Loads the FIFO with text packets
  *  until either the FIFO is full
@@ -525,6 +545,11 @@ void FillFIFO(void)
 			case 'Z' :
 				if (SendDataBroadcast(packet))
 					insert(packet,evenfield);	// Secondary action. You might have other ideas
+				else
+				{
+					dump(packet);
+					Parity(packet,5);		// Do the parity and bit reverse, as databroadcast doesn't do it
+				}
 				break;
 			default: // Error! Don't know what to do. Make it quiet.
 				QuietLine(packet,0x06);

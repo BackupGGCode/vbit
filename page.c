@@ -32,7 +32,7 @@ static void put_rc (FRESULT rc)
 		"INVALID_NAME\0" "DENIED\0" "EXIST\0" "INVALID_OBJECT\0" "WRITE_PROTECTED\0"
 		"INVALID_DRIVE\0" "NOT_ENABLED\0" "NO_FILE_SYSTEM\0" "MKFS_ABORTED\0" "TIMEOUT\0";
 	FRESULT i;
-
+	if (rc==0) return; // Not interested in OK
 	for (p = str, i = 0; i != rc && pgm_read_byte_near(p); i++) {
 		while(pgm_read_byte_near(p++));
 	}

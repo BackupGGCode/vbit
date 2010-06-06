@@ -26,8 +26,8 @@ void EndPacket(unsigned char *Hi,unsigned char *Lo)
 void AddCRC(unsigned char c)
 {
   c^=m_HiByte;
-  m_HiByte=m_LoByte^pgm_read_byte(TH+c); // hi byte from progmem
-  m_LoByte=pgm_read_byte(TL+c); // lo byte from progmem
+  m_HiByte=m_LoByte^pgm_read_byte(&TH[c]); // hi byte from progmem
+  m_LoByte=pgm_read_byte(&TL[c]); // lo byte from progmem
 }//Add
 
 void ClearCRC(void)

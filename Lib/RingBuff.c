@@ -103,6 +103,11 @@ int Buffer_IsEmpty(RingBuff_t* const Buffer)
 	return Buffer->Elements==0;	
 }
 
+int Buffer_IsFull(RingBuff_t* const Buffer)
+{
+	return Buffer->Elements>=BUFF_LENGTH;
+}
+
 #if defined(BUFF_USEPEEK)
 RingBuff_Data_t Buffer_PeekElement(const RingBuff_t* const Buffer)
 {
