@@ -108,9 +108,9 @@ int SendDataBroadcast(char* pkt)
 	for (i=8;i<43;i++)
 	{
 		if (Buffer_IsEmpty(&DBbuffer))
-			pkt[i]='\0';
+			pkt[i]=0x80;
 		else
-			pkt[i]=Buffer_GetElement(&DBbuffer); 	// What about partial lines?
+			pkt[i]=pgm_read_byte(&ParTab[Buffer_GetElement(&DBbuffer)]); 	// What about partial lines?
 		// xputs(PSTR(" char="));
 		// xputc(pkt[i]);
 	}
