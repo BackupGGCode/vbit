@@ -5,28 +5,7 @@
 
 #include "databroadcast.h"
 
-// Globals
-char nic1[6];
-char nic2[6];
-
-char ChecksumFormat='A';// Or B
-
-int nServicePacketAddress;  /// Address can be 0 to 15 (default 2)
-
-char strLabel830[40];       /// The current packet 830 label, eg "BBC ONE"
-char strNormalLabel830[40]; /// The packet 830 label from configuration
-
-// These are not used
-int m_nNIC1=0xfa6f; /// 16 bit network identifier code 8/30 format 1 (BBC1)
-int m_nNIC2=0x2c2f; /// 16 bit network identifier code 8/30 format 2
-
-
-
-/* Finds the absolute value of a number */
-int abs(int no)
-{
-  return (no<0)?(no*-1):no;
-} 
+int nServicePacketAddress;  /// Address can be 0 to 15 (default 2). TODO: Make more flexible?
 
 static RingBuff_t DBbuffer;
 
@@ -60,10 +39,11 @@ void InitDataBroadcast(void)
 }
 
 //--------------------------------------------------------
-/** Send databroadcast as packet 8/31 
+/** Send databroadcast as packet 8/31 using IDL type A checksums
  * This routine takes data from the ring buffer and places it into a packet.
  * \param pkt : pointer to a char buffer that must be at least 45 characters long
  * \return 1 if there is nothing to send, or 0 if there is a valid packet.
+ * TODO: Repeats, Datalength. 
  */
 int SendDataBroadcast(char* pkt)
 {
@@ -77,8 +57,6 @@ int SendDataBroadcast(char* pkt)
 	{
 		return 1;
 	}
-	
-	//xputc('B');
 	
 	// Assemble the basic packet 8/31
 	// Note that the comment numbers are one higher than the array index. 
@@ -94,23 +72,26 @@ int SendDataBroadcast(char* pkt)
 	*(p++)=HamTab[9];					// 8: SPA address 9. (For SISCom)
 	// *(p++)=0x00; //						// 9: no repeat
 	//*(p++)=continuity++;				// 10: continuity indicator
+	// The rest of the packet doesn't need to be filled with dummy values,
+	// except for debugging
+	/*
 	for (i=8;i<43;i++)					// 11-43: 33 payload bytes
 		*(p++)=' ';
 	*(p++)=0xfe;						// 44: Hi checksum
 	*(p++)=0xff;						// 45: Lo checksum
-
+	*/
 	// initialise the checksum
 	ClearCRC();
-
-	// Copy as much of the payload as we can
 	
-	// insert the payload
+	// insert the payload and set even parity,
+	// and clear out the rest of the packet.
+	// TODO: Add the DL value. This will reduce the overheads
 	for (i=8;i<43;i++)
 	{
 		if (Buffer_IsEmpty(&DBbuffer))
 			pkt[i]=0x80;
 		else
-			pkt[i]=pgm_read_byte(&ParTab[Buffer_GetElement(&DBbuffer)]); 	// What about partial lines?
+			pkt[i]=pgm_read_byte(&ParTab[Buffer_GetElement(&DBbuffer)]); 	// What about partial lines? DL!
 		// xputs(PSTR(" char="));
 		// xputc(pkt[i]);
 	}
