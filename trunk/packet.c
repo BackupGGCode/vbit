@@ -491,7 +491,13 @@ void dump(char* p)
  */
 void FillFIFO(void)
 {
+#define opt_out_test	
+#ifdef opt_out_test	
+	static char testOptMode;	// modes are 0..3
+	static char testOptRate=0;	// Rate reducer
+#endif	
 	char action;
+	char *p;
 	static char packet[PACKETSIZE];
 	uint16_t fifoWriteAddress;
 	static uint8_t packetToWrite=0; // Flags a left over packet that we need to send
@@ -547,6 +553,33 @@ void FillFIFO(void)
 					insert(packet,evenfield);	// Secondary action. You might have other ideas
 				else
 				{
+// #ifdef opt_out_test	
+// The contents in here tests opt out signals. It does this by stealing from the databroadcast packet
+// So you'll need to remove this as you will lose packets.	
+					testOptRate++;	// The existing code should get here at 1Hz
+					if (testOptRate>5)	// Steal
+					{
+						testOptMode=(testOptMode+1)%4;
+						testOptRate=0;
+						WritePrefix(packet,8,31);
+						p=&packet[5];
+						*p++=0x15;			// 5
+						*p++=0x49;			// 6
+						*p++=0xb6;			// 7
+						*p++=0x2f;			// 8
+						*p++=0xc9;			// 9 Junk
+						*p++=HamTab[testOptMode];			// 10 relays 1
+						*p++=0x15;	// 11 relays 2
+						*p++='S';
+						*p++='o';
+						*p++='f';
+						*p++='t';
+						*p++='e';
+						*p++='l';
+						*p++=' ';
+						
+					}
+// #endif
 					dump(packet);
 					Parity(packet,5);		// Do the parity and bit reverse, as databroadcast doesn't do it
 				}
