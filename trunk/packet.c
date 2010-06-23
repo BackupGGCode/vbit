@@ -63,6 +63,9 @@ static unsigned char state[8]={0,0,0,0,0,0,0,0};
 
 char g_OutputActions[2][18];
 
+int OptRelays;			/** Holds the current state of the opt out relay signals */
+
+
 /** Check that parity is correct for the packet payload
  * The parity is set to odd for all bytes from offset to the end
  * The bits are then all reversed into transmission order
@@ -495,6 +498,7 @@ void FillFIFO(void)
 #ifdef opt_out_test	
 	static char testOptMode;	// modes are 0..3
 	static char testOptRate=0;	// Rate reducer
+	static int OldOptRelays=0;	// Tell if the Opts changed
 #endif	
 	char action;
 	char *p;
@@ -557,8 +561,9 @@ void FillFIFO(void)
 // The contents in here tests opt out signals. It does this by stealing from the databroadcast packet
 // So you'll need to remove this as you will lose packets.	
 					testOptRate++;	// The existing code should get here at 1Hz
-					if (testOptRate>5)	// Steal
+					if (testOptRate>5 || OldOptRelays!=OptRelays)	// Steal
 					{
+						OldOptRelays=OptRelays;
 						testOptMode=(testOptMode+1)%4;
 						testOptRate=0;
 						WritePrefix(packet,8,31);
@@ -568,19 +573,21 @@ void FillFIFO(void)
 						*p++=0xb6;			// 7
 						*p++=0x2f;			// 8
 						*p++=0xc9;			// 9 Junk
-						*p++=HamTab[testOptMode];			// 10 relays 1
-						*p++=0x15;	// 11 relays 2
-						*p++='S';
-						*p++='o';
-						*p++='f';
-						*p++='t';
-						*p++='e';
-						*p++='l';
-						*p++=' ';
-						
+/*						*p++=HamTab[testOptMode];			// 10 relays 1						
+						*p++=HamTab[(testOptMode+1)%4];	// 11 relays 2
+						*/
+						*p++=HamTab[OptRelays&0x0f];			// 10 relays 1						
+						*p++=HamTab[(OptRelays>>4)&0x0f];	// 11 relays 2
+						*p++='S';*p++='o';*p++='f';*p++='t';*p++='e';*p++='l';*p++=' '; // 12
+						*p++='D';*p++='l';*p++=' '; // 19
+						*p++='X';*p++='3';*p++='l';*p++=' '; // 22
+						*p++='S';*p++='u';*p++='b';*p++='t';*p++='i';*p++='t';*p++='l';*p++='e';*p++=' '; // 26
+						*p++='I';*p++='n';*p++='s';*p++='e';*p++='r';*p++='t';*p++='e';*p++='r'; //35
+						// Which leaves two checksum digits
+						dump(packet);
 					}
 // #endif
-					dump(packet);
+					// dump(packet);
 					Parity(packet,5);		// Do the parity and bit reverse, as databroadcast doesn't do it
 				}
 				break;

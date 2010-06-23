@@ -106,4 +106,5 @@ extern char g_OutputActions[2][18];
 extern void put_rc (FRESULT rc);
 extern FATFS Fatfs[1];
 
+extern int OptRelays;			/* Holds the current state of the opt out relay signals */
 #endif
