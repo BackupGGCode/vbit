@@ -33,7 +33,6 @@ extern FATFS Fatfs[1];			/* File system object for the only logical drive */
 
 const char inifile[] = "test.ini";
 
-
 void testIni(void)
 {
 	xputs(PSTR("TestIni\n"));	
@@ -248,8 +247,13 @@ static int vbit_command(char *Line)
 		break;
 	case 'X':	/* X - Exit */
 		return 2;	
-
-		
+	case 'O':	/* O - Opt out. Example: O1c*/
+		/* Two digit hex number. Only 6 bits are used so the valid range is 0..3f */
+			ptr=&Line[0];
+			Line[0]='0';Line[1]='x';
+			xatoi(&ptr,&n);
+			OptRelays=n & 0x3f;
+		break;		
 	case 'G': /* G - Packet 8/30 format 1 [p830f1]*/
 		if (rwmode==CMD_MODE_NONE)
 		{
