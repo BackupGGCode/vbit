@@ -38,4 +38,4 @@ If you are using an XD300 then ask for the version that is not fitted with pins.
 Be very careful when fitting the interconnection as a mistake will destroy the board.
 
 = ECN 6 =
-For XD200 XMEGA boards, J27 should be closed with a solder blob.
+For XD200 XMEGA revision A boards, J27 should be closed with a solder blob.
