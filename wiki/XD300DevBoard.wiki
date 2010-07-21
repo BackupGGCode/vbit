@@ -1,4 +1,4 @@
-#summary Why use the XD300 XMEGA board?
+#summary Why use the XD200 XMEGA board?
 #labels Phase-Design
 Stop Press. Justin called the board the XD200 Revision B.
 = XD200 XMEGA Development Board=
