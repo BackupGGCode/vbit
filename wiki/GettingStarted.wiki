@@ -13,6 +13,10 @@ The hardware is two parts. A processor board that you buy ready made and a video
   * A VBIT board. Contact me if you want to buy a bare board. I have a few in stock made by Beta Layout. They do need a few patches.
   * The project has circuit diagrams, gerbers and a bill of materials that I will post if anyone needs it.
 
+Sadly the processor board is probably not available so the project will be moving to the next generation Mattairtech board, which is due in May 2011. However, it has a real time clock so this will make it possible to run the teletext time without needing a PC host and will also help with date stamping files on the SD card. It could also be used for scheduling so again you could have a complete standalone system.
+
+Also the SAA7113 is a bit rare these days and my usual suppliers no longer stock it. If you find a reasonable source for small quantities of these then please let me know.
+
 = Software =
 The software is in three broad categories, namely tools, libraries and source code.
 ==Tools==
@@ -20,9 +24,10 @@ The software is in three broad categories, namely tools, libraries and source co
   * Atmel Flip. Used for programming the AVR USB SPI Bridge.
   * WinAVR. The toolchain including compiler and linker
   * You may also like to download the demo code for the JM-XD200-USB board as it contains many useful examples and it may have better USB bridge code.
+  * Optional: AVR Dragon JTAG programmer. This is much lower cost than the JTAGICE MkII but if you are debugging then this will save a lot of time.
 ==Libraries==
 These libraries may need to be installed.
-  * LUFA is the Lightweight USB Framework for AVRs.
+  * LUFA is the Lightweight USB Framework for AVRs by Dean Camera.
   * FatFS is the FAT filing system that is used to read the SD card.
 ==Source Code==
 This is the actual VBIT code. I need to examine the code and replace any non-GPL parts that may be in there before it can be released.
