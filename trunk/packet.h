@@ -56,6 +56,7 @@
 #include "databroadcast.h"
 #include "../SDCard/ff.h"
 #include "../SDCard/diskio.h"
+#include "sdfilemanager.h"
 
 #define PACKETSIZE 45
 

@@ -113,7 +113,6 @@ void Init830F1(void)
 	int i,n;
 
 	char str[MAXSTR];
-	char str2[MAXSTR];
 	unsigned char *p;
 	p=pkt830;
 	// Assemble the basic packet 8/30 format 1
