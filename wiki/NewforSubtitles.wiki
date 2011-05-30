@@ -16,33 +16,47 @@ This is the protocol copied from a Softel document:
 This message informs the interface which magazine and page the subtitling is to
 be performed on. Subtitling is terminated by requesting magazine 9 page 99.
 The message consists of 5 bytes:
-SO (HEX OE), 0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units)0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units)0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units)0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units) 0, Mag No. page (tens), Page units)0, Mag No. page (tens), Page units)0, Mag No. page (tens), Page units)
+
+SO (HEX OE), 0, Mag No., page (tens), Page units) 0
+
 Hamming Encoded
 
 ==Message Type 2 – Set Subtitle Buffer==
 This message consists of up to 7 rows of subtitle information preceded by a message identifier.
 The message identifier consists of 2 bytes:
-SI (HEX 8F), 8 x Clear Bit + No. of subtitle rows 8 x Clear Bit + No. of subtitle rows8 x Clear Bit + No. of subtitle rows8 x Clear Bit + No. of subtitle rows 8 x Clear Bit + No. of subtitle rows8 x Clear Bit + No. of subtitle rows 8 x Clear Bit + No. of subtitle rows 8 x Clear Bit + No. of subtitle rows 8 x Clear Bit + No. of subtitle rows 8 x Clear Bit + No. of subtitle rows8 x Clear Bit + No. of subtitle rows8 x Clear Bit + No. of subtitle rows8 x Clear Bit + No. of subtitle rows8 x Clear Bit + No. of subtitle rows 8 x Clear Bit + No. of subtitle rows
+
+SI (HEX 8F), 8 x Clear Bit + No. of subtitle rows
+
 Hamming Encoded
+
 The clear bit is set if the previous subtitle is to be cleared.
+
 Each row of subtitle information consists of:
-Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom Top 4 bits of row No. bottom 40 data bytes
+
+Top 4 bits of row No., bottom Top 4 bits of row No., 40 data bytes
+
 Hamming Encoded
 (Binary)
 ==Message Type 3 – Display Subtitle==
 This message informs the interface to display the subtitle currently buffered.
+
 The message consists of a single byte.
+
 DLE (HEX 10)
 ==Message Type 4 – Clear Subtitle==
 This message informs the interface to clear the subtitle currently on display.
+
 The message consists of a single byte.
+
 Conceal Display (HEX 98)
-Specification of Subtitle Interface Protocol
+==Specification of Subtitle Interface Protocol==
 There are four types of input data:
+<pre>
 a)"Set Subtitle page" command
 b)"Set Subtitle Buffer"
 c)"Display Subtitles" command
 d)"Clear Subtitles" command
+</pre>
 On receipt of a message (Type 2), the interface responds with either a NAK or ACK, signifying its rejection of acceptance of the data.
 All non-hamming encoded bytes contain odd parity.
 ==Hamming Table==
@@ -70,9 +84,9 @@ Softel have designed extensions to the basic Newfor protocol to address the prob
 We have added a 5thth Message Type to the existing 4 of the basic Newfor protocol. This new Message Type is called "Set Channel" and is used to define which of the 4 logical channels will be used by subsequent subtitle messages.
 ==Message Type 5 – Set Logical Channel==
 Defines the Channel number 1-4 that subsequent Message Types 1-4 above will apply to. Consists of 3 bytes:-
-- ESCAPE (Hex 9B) in ODD Parity as usual.
-- the Channel Number (1 – 4), Hamming Encoded
-e.g. Hex 9B, Hex 5E = Set Channel 3.
+ - ESCAPE (Hex 9B) in ODD Parity as usual.
+ - the Channel Number (1 – 4), Hamming Encoded
+ e.g. Hex 9B, Hex 5E = Set Channel 3.
 Each Logical Channel number has its own Mag/Page numbers. This arrangement makes it compatible with existing Newfor equipment, which of course will never send the Set Channel message. The receiving equipment should default to Channel 1 on power-up and after terminating transmission, so all the type 1-4 messages will refer to Channel 1 and other channels remain unused.
 ==Specifying the Language==
 The Host system needs to know what language is on which channel, so it can set the appropriate country code in the Row 0 Header – this selects the National Character Options to be used.
@@ -83,12 +97,18 @@ SO (hex 0E), 0, 0, 0, CC
 ^ _ Page No. (tens) = Zero
 ^ _ Country Code (replaces Page No. (Units))
 where CC represents the Country Code, as defined below:-
-0 English4 French
-1 German & Dutch5 Spanish & Portugese
-2 Sweden6 (not used)
-3 Italian7 Arabic
-Using Newfor Protocol over a Network
+<pre>
+0 English
+1 German & Dutch
+2 Sweden
+3 Italian
+4 French
+5 Spanish & Portugese
+6 (not used)
+7 Arabic
+</pre>
+==Using Newfor Protocol over a Network==
 As an alternative to transmission over a Serial line, Newfor commands may be sent over a network, wrapped up in an appropriate network packet, e.g. IPX or SPX.
-Using an Extended Character Set
+==Using an Extended Character Set==
 Some languages (e.g. Swedish, Spanish) support an extended Teletext character set, with character codes in the range Hex 80 to FF. In these cases, the 40 data bytes per subtitle row in the Type 2 Message will NOT be odd parity, they will be 8-bit character codes.
 Characters in the extended range are transmitted over Teletext using Packet 26 techniques and it is the Host which is expected to assemble these packets.
