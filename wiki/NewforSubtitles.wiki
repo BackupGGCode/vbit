@@ -3,14 +3,10 @@
 = Introduction =
 
 Newfor is a Softel protocol commonly used for live subtitles. It is normally transmitted over serial links but is sometimes sent over ethernet. Inserters like the MRG DTP600 are still being used for subtitles.  Sorry about the formatting. This needs to be fixed.
-
-
 = Details =
 
 This is the protocol copied from a Softel document:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+
 =Newfor Protocol=
 ==Message Type 1 – Set Subtitle Page==
 This message informs the interface which magazine and page the subtitling is to
