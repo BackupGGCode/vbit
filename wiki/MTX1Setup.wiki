@@ -23,3 +23,4 @@ VBIT connects to the dev. board by a data cable and a power cable.
 
 TODO: Go through the steps of installing DFU Updater or Flip and getting the VBIT code onto the XMEGA. Also how to put pages onto the MicroSD card.
 How to make a *short* 10 way ribbon cable and a decent rated power cable.
+The VBIT header is 2x6 but you should only fit a 2x5 header. Place it so that the two holes nearest the middle of the board are left unconnected. Or cut them off if you have already soldered pins in this location. Pin 1 is now the top left pin.
