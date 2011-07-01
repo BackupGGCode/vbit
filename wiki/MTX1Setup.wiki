@@ -10,8 +10,9 @@ You can get away with using a mini USB cable to program and run the board. You w
 = Software Details = 
 Go to the Mattair MT-X1 website and download everything on that page!
 http://xmega.mattair.net/code.html
-If you are using a Window PC then plug the board in using the USB. The driver should start to install. Point the driver at your downloaded INF file MT_X1.INF.
+If you are using a Windows PC then plug the board in using the USB. The driver should start to install. Point the driver at your downloaded INF file MT_X1.INF.
 Start Hyperterminal and configure a new connection. The highest COM number is likely to belong to the board.
+Linux is a bit easier. The device normally pops up as /dev/ttyACM0 and you can use miniterm to connect.
 When you connect it should say "MT-X1 XMEGA Demo Program".
 You should be able to run through the pre-installed demos.
 = Installing VBIT =
