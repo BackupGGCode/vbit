@@ -22,3 +22,4 @@ VBIT connects to the dev. board by a data cable and a power cable.
  * If you have a JTAG programmer like AVRDRAGON or AVR JTAGICE MkII then fit a 2x5 header in the JTAG port.
 
 TODO: Go through the steps of installing DFU Updater or Flip and getting the VBIT code onto the XMEGA. Also how to put pages onto the MicroSD card.
+How to make a *short* 10 way ribbon cable and a decent rated power cable.
