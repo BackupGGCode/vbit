@@ -7,6 +7,7 @@ The MT-X1 board replaced the old development board in June 2011. The hardware is
 = Hardware Details =
 
 You can get away with using a mini USB cable to program and run the board. You will need a Micro SD card to store teletext pages on. My local shops only stock 2GB cards and this is fine.
+The headers required on the MT-X1 are shown on https://picasaweb.google.com/peterk.vt80/VBIT#
 = Software Details = 
 Go to the Mattair MT-X1 website and download everything on that page!
 http://xmega.mattair.net/code.html
