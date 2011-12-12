@@ -1,0 +1,17 @@
+#summary A Rough Guide to Configuring VBIT
+#labels Phase-Design
+
+= Overview =
+
+The structure of the AVR code comes from the Mattair demo program. The program demos the various hardware features and there is a simple text menu used to select the tests. The VBIT code is added as another test. The advantage is that all of the tedious framework especially the USB comms is taken care for you.
+
+
+= Outline =
+
+These are the steps to get a working VBIT. Unfortunately there are no detailed instructions as yet but this should give you an idea of how I did it. Look in the code for an example of how I did it with the old Mattair board.
+
+  * Download the latest version of the source code from http://xmega.mattair.net/code.html
+  * Place the VBIT code in the XMEGA section alongside the other demos.
+  * Edit the makefile to compile VBIT.
+  * Add VBIT to the menu list.
+  * Set VBIT to start automatically by jumping directly to the VBIT code. 
