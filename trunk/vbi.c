@@ -73,16 +73,16 @@ void FieldInterruptHandler(void)
 			UTC=0;
 		// SISCom databroadcast fader
 		// This is only one command sent once a second to exercise the receiver
-		// Toggle the fade direction every 5 seconds
-		strcpy(str,"\016fade,0,3\n");
-		str[6]=((UTC/5)%2==0)?'1':'0';
+		// Toggle the fade direction every 3 seconds
+		strcpy(str,"\016fade,0,1\n");
+		str[6]=((UTC/3)%2==0)?'1':'0';
 		putringstring(str);
 	}
 	
 	// What is the state of PINC.2
 
 	// Start the vbi timer
-	// We want a preset 15625 samples at fosc/1 for 1024us
+	// We want a preset 15625 cycles at fosc/1 for 1024us
 	// Because 1ms * 16MHz = 15625
 	/* Set period/TOP value. */
 
@@ -93,7 +93,7 @@ void FieldInterruptHandler(void)
 	timerVBIControl->INTCTRLA|=TC_OVFINTLVL_LO_gc;	
 
 	// Also start the Window-of-access timer, the time while the FIFO may be written to
-	// This is about 18ms. TODO: Measure this on a scope and get it more accurate. We can squeeze better performance.
+	// This is about 18ms. Check this on a scope to ensure that we don't over-run the vbi.
 	// The preset at fosc/64. for 18ms is (16000000 * 0.018s)/64 = 4500.
 	timerFIFOBusyControl->PER=8500; // Ummm. No idea why x2. The scope shows it to be correct: !9000 worked!
 	/* Select clock source. */
