@@ -1,6 +1,6 @@
 /* Packet 31 Databroadcast*/
 
-// Parts of this code are
+// Parts of this code were originally
 // Copyright 2004-2006 (c) MRG Systems Ltd.
 
 #include "databroadcast.h"
@@ -69,7 +69,7 @@ int SendDataBroadcast(char* pkt)
 	//  Need to implement DL
 	*(p++)=HamTab[0];					// 6: FT Format type set to format 1 with implicit continuity and no repeats
 	*(p++)=HamTab[1];					// 7: IAL address length of 1 (IAL)
-	*(p++)=HamTab[9];					// 8: SPA address 9. (For SISCom)
+	*(p++)=HamTab[9];					// 8: SPA address=9 for SISCom, 8 for BTVC
 	// *(p++)=0x00; //						// 9: no repeat
 	//*(p++)=continuity++;				// 10: continuity indicator
 	// The rest of the packet doesn't need to be filled with dummy values,
