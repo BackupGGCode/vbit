@@ -30,4 +30,11 @@ These libraries may need to be installed.
   * LUFA is the Lightweight USB Framework for AVRs by Dean Camera.
   * FatFS is the FAT filing system that is used to read the SD card.
 ==Source Code==
-This is the actual VBIT code. I need to examine the code and replace any non-GPL parts that may be in there before it can be released.
+This is the actual VBIT code. Currently it links into the dev board's demo software. More details about how to do it...
+==Load the code==
+The JM-XD200-USB should have no jumpers installed. Press HWB and momentarily press RESET. The unit will now be in AVRISP mode. It pretends to be AVRISP MkII so select that in AVR Studio 4. The target device is ATXMEGA128A1. On my system the compiled image is called XMEGA_Demo.hex. I don't think that you need to bother with the eep. If it programs OK then press RESET and the system should be running. The LEDs should start to flicker if there is a video source connected to VBIT.
+To find which COM port you have been assigned go into System->Hardware->Ports (Com). Find a suspicious com port with a number higher than 2. Look at the properties. It should identify itself as being JM-XD200-USB). Note the COM number and use this to connect using Hyperterminal.
+In Hyperterminal type
+<CTRL-N>0Y<RETURN>
+It should reply something like 
+VBIT620 Version 0.01
