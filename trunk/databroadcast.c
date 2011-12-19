@@ -48,7 +48,7 @@ void InitDataBroadcast(void)
 int SendDataBroadcast(char* pkt)
 {
 	int i;
-	static unsigned char continuity = 0;
+	// static unsigned char continuity = 0; // TODO
 
 	//xputc('D');
 
@@ -108,3 +108,51 @@ int SendDataBroadcast(char* pkt)
 	
 	return 0;
 }//SendDataBroadcast
+
+// SendOpt14 - Sends a mode 14 start packet
+int SendOpt14(char* pkt)
+{
+// Softel opt-outs have 6 address bytes (24 bit)
+#define AddressLength 6
+	unsigned int i;
+	char* p;
+		
+	WritePrefix(pkt,8,31);	// CRI,FC,MRAG
+	p=&pkt[5];	
+	
+	//  Need to implement DL
+	*(p++)=HamTab[0];					// 6: FT Format type set to format 1 with implicit continuity and no repeats
+	*(p++)=HamTab[AddressLength];		// 7: IAL address length of 6 (IAL)
+	*(p++)=HamTab[0];					// Address 000242 (Eurosport 2)
+	*(p++)=HamTab[0];					// 
+	*(p++)=HamTab[0];					// 
+	*(p++)=HamTab[2];					// 
+	*(p++)=HamTab[4];					// 
+	*(p++)=HamTab[2];					// 
+	*(p++)=HamTab[0];					// Checksum computing starts here.
+	// RI is not included because FT=0
+
+	//1538151515496449155001B0B0B03134B6B0B932B020204332B334B5B920202020D3CDD351E3BF11
+//0 6 0 0 0 2 4 2 0.............. d..............................................
+//ö  8ö ö ö  I d Iö  Pö  0 0 0 1 4 6 0 9 2 0     C 2 3 4 5 9         S M S Q c ?ö 
+	*(p++)=0x50; 
+	*(p++)=0x01;*(p++)=0xB0;*(p++)=0xB0;*(p++)=0xB0;*(p++)=0x31;	// 15
+	*(p++)=0x34;*(p++)=0xB6;*(p++)=0xB0;*(p++)=0xB9;*(p++)=0x32;	// 20
+	*(p++)=0xB0;*(p++)=0x20;*(p++)=0x20;*(p++)=0x43;*(p++)=0x32;	// 25
+	*(p++)=0xB3;*(p++)=0x34;*(p++)=0xB5;*(p++)=0xB9;*(p++)=0x20;	// 30
+	*(p++)=0x20;*(p++)=0x20;*(p++)=0x20;*(p++)=0xD3;*(p++)=0xCD;	// 35
+	*(p++)=0xD3;*(p++)=0x51;*(p++)=0xE3;*(p++)=0xBF;*(p++)=0x11;	// 40
+	
+	// Calculate the CRCs (Parity is already done on these values)
+	ClearCRC();
+	// Strictly speaking, we should also look at FT and add as required CI, RI, DL.
+	for (i=8+AddressLength;i<43;i++) // Where the count is 7+Address Length. (BTVC=1, Softel trigger=6.)
+	{
+		AddCRC(pkt[i]);
+	}
+	// add it to the end
+	// Oh dear. It doesn't match. Let's not do this at the moment
+	// EndPacket(&pkt[43],&pkt[44]);
+
+	return 0; // TODO. Return something useful?
+} // SendOpt14

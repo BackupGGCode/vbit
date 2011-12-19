@@ -87,6 +87,11 @@
 #define CTRL_C4_ERASEBIT_bm				0x4000	/* Erase all rows of the previous transmission of the page */
 #define CTRL_ENABLETX_bm				0x8000	/* Set this to enable transmission */
 
+#define OPTOUT_PREROLL 0
+#define OPTOUT_START 1
+#define OPTOUT_STOP 2
+
+
 /**\brief Writes the CRI, FC , MRAG to a standard text packet
  * \param packet : Buffer to add the MRAG
  */
@@ -108,4 +113,7 @@ extern void put_rc (FRESULT rc);
 extern FATFS Fatfs[1];
 
 extern int OptRelays;			/* Holds the current state of the opt out relay signals */
+
+extern unsigned char OptOutMode;	// Which ATP950 mode
+extern unsigned char OptOutType;	// One of the OPTOUT values
 #endif

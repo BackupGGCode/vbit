@@ -30,6 +30,14 @@ void InitDataBroadcast(void);
  */
 int SendDataBroadcast(char* pkt);
 
+/** Sends a mode 14 Opt Out
+ */
+int SendOpt14(char* pkt);
+
+
+// WritePrefix is linked from packet.c
+extern void WritePrefix(char *packet, uint8_t mag, uint8_t row);
+
 char* putringstring(char* str);
 
 #endif
