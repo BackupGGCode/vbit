@@ -65,6 +65,8 @@ char g_OutputActions[2][18];
 
 int OptRelays;			/** Holds the current state of the opt out relay signals */
 
+unsigned char OptOutMode=0;	// Which ATP950 mode. If 0, then do nothing
+unsigned char OptOutType=OPTOUT_START;	// One of the OPTOUT values
 
 /** Check that parity is correct for the packet payload
  * The parity is set to odd for all bytes from offset to the end
@@ -343,7 +345,7 @@ static unsigned char insert(char *packet, uint8_t field)
 			p=--str;
 			*(str++)='0';
 			*(str++)='x';
-			xatoi(&p,&pageptr);
+			xatoi(&p,&pageptr); // warnings here!
 			str=strchr(str,',');
 			p=--str;
 			*(str++)='0';
@@ -466,6 +468,9 @@ static unsigned char insert(char *packet, uint8_t field)
 	return 0; // success
 } // insert
 
+/** dump - Dumps a packet to the console in hex format
+\param p : pointer to a packet.
+*/
 void dump(char* p)
 {
 	int i;
@@ -552,17 +557,44 @@ void FillFIFO(void)
 				//xputs(PSTR("i"));			
 				insert(packet,evenfield);
 				break;
-			case 'Z' :
-				if (SendDataBroadcast(packet))
-					insert(packet,evenfield);	// Secondary action. You might have other ideas
-				else
+			case 'Z' : // How can this even get here when there is no Z?
+				if (OptOutMode>0)
 				{
+					xprintf(PSTR("in ur code, doing ur optout\n"));
+					switch (OptOutMode)
+					{
+					case 14:
+						switch (OptOutType)
+						{
+						case OPTOUT_PREROLL:;
+						case OPTOUT_START:;
+						case OPTOUT_STOP:;
+							SendOpt14(packet);
+							dump(packet);
+							Parity(packet,14);		// Do the parity and bit reverse
+							dump(packet);
+							break;
+						default:
+							xprintf(PSTR("Unknown opt out type\n"));
+						}
+						break;
+					default:
+						xprintf(PSTR("Unknown opt out mode\n"));
+					}
+					OptOutMode=0;	// This is a one shot trigger, so clear it now.					
+				}
+				else
+				if (SendDataBroadcast(packet))
+					insert(packet,evenfield);	// If there is no databroadcast to send, insert the next normal line
+				else				
+				{
+				
 // #ifdef opt_out_test	
 // The contents in here tests Softel opt out signals. It does this by stealing from the databroadcast packet
 // So if it is important that you don't lose packets then remove this block.
 // See the "O" command for more details
 					testOptRate++;	// The existing code should get here at 1Hz
-					if (testOptRate>5 || OldOptRelays!=OptRelays)	// Steal
+					if (testOptRate>5 || OldOptRelays!=OptRelays && false)	// Steal. (Disabled by adding FALSE!)
 					{
 						OldOptRelays=OptRelays;
 						testOptMode=(testOptMode+1)%4;
@@ -585,7 +617,7 @@ void FillFIFO(void)
 						*p++='S';*p++='u';*p++='b';*p++='t';*p++='i';*p++='t';*p++='l';*p++='e';*p++=' '; // 26
 						*p++='I';*p++='n';*p++='s';*p++='e';*p++='r';*p++='t';*p++='e';*p++='r'; //35
 						// Which leaves two checksum digits
-						dump(packet);
+						// dump(packet);
 					}
 // #endif
 					// dump(packet);

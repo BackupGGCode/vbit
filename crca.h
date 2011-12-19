@@ -9,6 +9,6 @@
   unsigned char GetHi(void);
   unsigned char GetLo(void);
   void AddCRC(unsigned char c);  
-  void EndPacket(unsigned char *Hi,unsigned char *Lo);
+  void EndPacket(char *Hi, char *Lo);
 
 #endif

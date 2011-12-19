@@ -59,7 +59,7 @@ void FieldInterruptHandler(void)
 	const uint32_t day=(uint32_t)60*60*24;
 	LED_On( LED_3 ); // Got a field interrupt (video OK)
 	static int count=0;
-	static int secs=0;
+	//static int secs=0;
 	char str[20];
 	count++;
 	/*if ((count%50)==0)
@@ -71,14 +71,15 @@ void FieldInterruptHandler(void)
 		UTC++;
 		if (UTC>=day)
 			UTC=0;
+#ifdef RUN_FADER
 		// SISCom databroadcast fader
-		// This is only one command sent once a second to exercise the receiver
+		// This is a periodic command sent exercise the SISCOM receiver
 		// Toggle the fade direction every 3 seconds
 		strcpy(str,"\016fade,0,1\n");
 		str[6]=((UTC/3)%2==0)?'1':'0';
 		putringstring(str);
+#endif	
 	}
-	
 	// What is the state of PINC.2
 
 	// Start the vbi timer

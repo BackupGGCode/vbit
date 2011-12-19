@@ -16,7 +16,7 @@ unsigned char GetLo()
 }//GetLo
 
 // End of a row. Hi is checksum S0, Lo is checksum S1 (or vice versa)
-void EndPacket(unsigned char *Hi,unsigned char *Lo)
+void EndPacket(char *Hi,char *Lo)
 {
   *Hi=GetHi();
   *Lo=GetLo();

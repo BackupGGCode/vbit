@@ -235,7 +235,7 @@ static int vbit_command(char *Line)
 		}		
 		break;
 	case 'Y': /* Y - Version */
-		xputs(PSTR("VBIT620 Version 0.00\n"));
+		xputs(PSTR("VBIT620 Version 0.01\n"));
 		break;		
 	case 'T': // TEST
 		// testIni();
@@ -244,6 +244,29 @@ static int vbit_command(char *Line)
 		break;
 	case 'U': // TEST
 		Init830F1();
+		break;
+	case 'W': // TEST Ad-tec opt outs
+		// W14 - Send a mode 14 opt out
+		// We want to be able to test various ATP950 modes.
+		// read the parameter
+		ptr=&Line[2];	
+		xatoi(&ptr,&OptOutMode);
+		xprintf(PSTR("W=%04X\n"),OptOutMode);
+		// Which command? Set the appropriate opt out mode
+		switch (OptOutMode)
+		{
+		case 14:
+			xprintf(PSTR("Mode 14 shenanigans\n"),n);
+			// Or just flag that we want an opt-out packet
+			OptOutMode=14;
+			OptOutType=OPTOUT_START;
+			// Assemble a mode 14 packet
+			break;
+		default:
+			OptOutMode=0;
+			returncode=1;
+		}
+		// Assemble the packet and 
 		break;
 	case 'X':	/* X - Exit */
 		return 2;	
@@ -400,6 +423,7 @@ int LoadINISettings(void)
 	int n;
 	n = ini_gets("service", "outputodd", "111Q2233P44556678Q", &(g_OutputActions[0][0]), 18, inifile);	
 	n = ini_gets("service", "outputeven", "111Q2233P44556678Q", &(g_OutputActions[1][0]), 18, inifile);	
+	return 0; // TODO: Return success or otherwise
 }
 
 int RunVBIT(void)
