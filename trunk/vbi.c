@@ -71,6 +71,7 @@ void FieldInterruptHandler(void)
 		UTC++;
 		if (UTC>=day)
 			UTC=0;
+#define RUN_FADER
 #ifdef RUN_FADER
 		// SISCom databroadcast fader
 		// This is a periodic command sent exercise the SISCOM receiver

@@ -65,7 +65,7 @@ int SendDataBroadcast(char* pkt)
 	*(p++)=0x55;                        // 2: clock run in
 	*(p++)=0x27;						// 3: framing code
 	*(p++)=HamTab[0x08];				// 4: mrag for 8/31. data channel. designation code.
-	*(p++)=HamTab[0x0f];				// 5:
+	*(p++)=HamTab[0x0f];				// 5: DCG
 	//  Need to implement DL
 	*(p++)=HamTab[0];					// 6: FT Format type set to format 1 with implicit continuity and no repeats
 	*(p++)=HamTab[1];					// 7: IAL address length of 1 (IAL)

@@ -601,11 +601,11 @@ void FillFIFO(void)
 						testOptRate=0;
 						WritePrefix(packet,8,31);
 						p=&packet[5];
-						*p++=0x64;			// 5
-						*p++=0x49;			// 6
-						*p++=0xb6;			// 7
-						*p++=0x2f;			// 8
-						*p++=0x00;			// 9 Junk
+						*p++=0x64;			// 5 FT=4
+						*p++=0x49;			// 6 IAL=2
+						*p++=0xb6;			// 7 Address(0)=D
+						*p++=0x2f;			// 8 Address(1)=7
+						*p++=0x00;			// 9 CI
 /*						*p++=HamTab[testOptMode];			// 10 relays 1						
 						*p++=HamTab[(testOptMode+1)%4];	// 11 relays 2
 						*/
