@@ -53,6 +53,10 @@ extern volatile uint8_t FIFOBusy; /// High when the FIFO is due to be transmitte
 // There is enough space in the SPIRAM for 32768/810 = 40 blocks
 // But we also use a block number to denote the odd/even phase 
 // so we need an even number of blocks which gives us the same 40.
+// However, we want to allow for queue jumping to go on with subtitles
+// and any other "real time" page insertion. We will do this by
+// reserving one pair of blocks. A flag will signify if one or both
+// of these blocks has data (subtitles or live pages) that need to go out. 
 #define FIFOBLOCKSIZE 810
 #define MAXFIFOINDEX 40
 extern volatile uint8_t fifoReadIndex; /// maintains the tx block index 0..39
