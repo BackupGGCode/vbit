@@ -407,6 +407,10 @@ static int vbit_command(char *Line)
 		}
 		returncode=1;
 		break;
+	// We could probably use the S command to encapsulate Newfor. We aren't going to be setting the page status much.
+	case 'S' : ; // Newfor. This should be a Newfor command. Hmm, but how to escape SO and SI?
+		// Work out how to escape data. The parity and reserved characters will break the CI
+		break;
 	default:
 		xputs(PSTR("Unknown command\n"));
 		returncode=1;

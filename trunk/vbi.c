@@ -198,6 +198,12 @@ ISR(TCE1_OVF_vect)
 			xputc('y');		// phase wrong
 			return;
 		}
+		// At this point we are almost ready to transmit so this is where we should consider subtitles
+		// 2a) Do we have subtitles buffered and ready?
+        // 2b) If so then set the fifo to read from that buffer
+        // 2c) Making sure that we don't upset the main packet stream 
+
+		
 		// 3) Does the FIFO have a packet ready?
 		if (nextBlock==fifoWriteIndex)
 		{
