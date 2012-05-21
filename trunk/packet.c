@@ -70,6 +70,7 @@ unsigned char OptOutType=OPTOUT_START;	// One of the OPTOUT values
 
 /** Check that parity is correct for the packet payload
  * The parity is set to odd for all bytes from offset to the end
+ * Offset should be at least 3, as the first three bytes have even parity
  * The bits are then all reversed into transmission order
  * \param packet : packet to check
  * \param offset : start offset to check. (5 for rows, 13 for header)
@@ -98,8 +99,8 @@ void Parity(char *packet, uint8_t offset)
  */
 void WritePrefix(char *packet, uint8_t mag, uint8_t row)
 {
-	char *p=packet;
-	*p++=0x55; // cri
+	char *p=packet; // Remember that the bit order gets reversed later
+	*p++=0x55; // cri 
 	*p++=0x55; // cri
 	*p++=0x27; // fc
 	// add MRAG
@@ -415,17 +416,17 @@ static unsigned char insert(char *packet, uint8_t field)
 			{
 				*str=0;
 				strcpy(pagename,listentry); // Get the filename
-			// Now we can get the seek pointer and size
-			p=--str;
-			*(str++)='0';
-			*(str++)='x';
-			xatoi(&p,&pageptr);
-			str=strchr(str,',');
-			p=--str;
-			*(str++)='0';
-			*(str++)='x';
-			xatoi(&p,&pagesize);
-			//xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);									
+				// Now we can get the seek pointer and size
+				p=--str;
+				*(str++)='0';
+				*(str++)='x';
+				xatoi(&p,&pageptr);
+				str=strchr(str,',');
+				p=--str;
+				*(str++)='0';
+				*(str++)='x';
+				xatoi(&p,&pagesize);
+				//xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);									
 			}
 			// xprintf(PSTR("L-%s "),pagename);				
 			state[mag]=STATE_IDLE;
