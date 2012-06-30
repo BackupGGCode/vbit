@@ -122,7 +122,7 @@ ISR(TCD0_OVF_vect)
 	}
 	vbiDone=1;
 	LED_Off( LED_3 );
-	LED_Off( LED_6 ); // Start the Window of access here.
+	LED_Off( LED_2 ); // Start the Window of access here.
 	FIFOBusy=0;	
 } // ISR: vbi done
  
@@ -130,7 +130,7 @@ ISR(TCD0_OVF_vect)
 void InitVBI(void)
 {
 
-	LEDs_Init();
+	// LEDs_Init(); // TODO. Implement this!
 	/* Configure Interrupt0 to have medium interrupt level, triggered by pin 2. */
 	fieldPort->INTCTRL = ( fieldPort->INTCTRL & ~PORT_INT0LVL_gm ) | PORT_INT0LVL_MED_gc;
 	// pin mask, pin 2 only
@@ -195,7 +195,7 @@ ISR(TCE1_OVF_vect)
 		// 2) Is the odd/even phase correct?
 		if (nextBlock%2 != field) // Not correct? Wait for the next field. TODO: Check that the phase is correct! 
 		{
-			xputc('y');		// phase wrong
+			// xputc('y');		// phase wrong
 			return;
 		}
 		// At this point we are almost ready to transmit so this is where we should consider subtitles
@@ -207,7 +207,7 @@ ISR(TCE1_OVF_vect)
 		// 3) Does the FIFO have a packet ready?
 		if (nextBlock==fifoWriteIndex)
 		{
-			xputc('Y'); // no data available
+			// xputc('Y'); // no data available
 			return;
 		}
 		fifoReadIndex=nextBlock;	
@@ -221,6 +221,6 @@ ISR(TCE1_OVF_vect)
 		/* Set a low level overflow interrupt.*/
 		timerFIFOBusyControl->INTCTRLA|=TC_OVFINTLVL_LO_gc;
 	}
-	LED_On( LED_6 ); // Set FIFOBusy
+	LED_On( LED_2 ); // Set FIFOBusy
 	FIFOBusy=1;
 } // ISR: FIFOBusy

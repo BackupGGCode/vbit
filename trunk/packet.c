@@ -364,9 +364,9 @@ static unsigned char insert(char *packet, uint8_t field)
 		// Now tx the header
 		// Need to do the whole parse and parity bit here 
 		// open pagefile
-		LED_On( LED_5 );		// LED5 - high while seeking a folder
+		LED_On( LED_1 );		// LED5 - high while seeking a folder
 		f_lseek(&pagefile,pageptr); // Instead of f_open just use lseek
-		LED_Off( LED_5 );
+		LED_Off( LED_1 ); // Need to define the correct LED
 		if (res)
 		{
 			xprintf(PSTR("[insert]Epic Fail 2\n"));			

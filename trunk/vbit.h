@@ -40,7 +40,7 @@
 #include "../minini/minIni.h"		
 #include <string.h>
 #include "xitoa.h"
-#include "../Common/Bridge.h"
+//#include "../Common/Bridge.h"
 #include "../Drivers/Port/port_driver.h"
 #include "../SDCard/ff.h"
 #include "../SDCard/diskio.h"
@@ -53,7 +53,9 @@
 #include "databroadcast.h"
 		
 #include "../../Common/Terminal/TerminalDriver.h"
-#include "../../Common/Terminal/TerminalEvents.h"		
+#include "../../Common/Terminal/TerminalEvents.h"	
+
+#include "../USB_Serial/USB_Serial.h"	
 /*
 #include "../RTC/rtc.h"
 */
