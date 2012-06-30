@@ -102,7 +102,8 @@ void testIni(void)
 }
 
 /* A line starts with <ctrl-n>0 and ends with \r 
-Assume echo mode is always on, but can add it later
+Assume echo mode is always on, but can add it later.
+This code pinched from SD_Card_Demo
 */
 static void get_line (char *buff, int len)
 {
@@ -112,7 +113,7 @@ static void get_line (char *buff, int len)
 	unsigned char started=0;
 
 	for (;;) {
-		while (!getBridgeByte(&c, false)) // Any characters?
+		while (!(c=USB_Serial_Get())) // Any characters?
 			if (vbiDone) // do the next field?
 			{			
 				FillFIFO();
@@ -121,19 +122,19 @@ static void get_line (char *buff, int len)
 		if (c == '\r') break;
 		if ((c == '\b') && idx) {
 			idx--;
-			sendBridgeByte(c, true);
+			USB_Serial_Send(c);
 		}
 
 		if (started && ((unsigned char)c >= ' ') && (idx < len - 1)) {
 			buff[idx++] = c;
-			sendBridgeByte(c, true);
+			USB_Serial_Send(c);
 		}
 		if (c==0x0e) started=1;
 
 	}
 	buff[idx] = 0;
-	sendBridgeByte(c, true);
-	sendBridgeByte('\n', true);
+	USB_Serial_Send(c);
+	USB_Serial_Send('\n');
 }
 
 /* SPI ram test */
@@ -432,8 +433,8 @@ int LoadINISettings(void)
 
 int RunVBIT(void)
 {
-	/* Join xitoa module to USB-SPI bridge module */
-	xfunc_out = (void (*)(char))sendBridgeByteSD;
+	/* Join xitoa module to USB-Serial bridge module */
+	xfunc_out = (void (*)(char))USB_Serial_Send;
 	Term_Erase_Screen();
 	xputs(PSTR("VBIT620 Inserter 0.01 Started\nKings Road Applications\n"));
 	GPIO_Init();	// Set up the ports

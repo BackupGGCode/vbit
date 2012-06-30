@@ -29,7 +29,7 @@ FILINFO Finfo;
 #if _USE_LFN
 char Lfname[_MAX_LFN+1];
 #endif
-void put_rc (FRESULT rc)
+static void put_rc (FRESULT rc)
 {
 	const prog_char *p;
 	if (rc==0) return;

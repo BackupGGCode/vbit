@@ -59,7 +59,7 @@
 	#include <util/atomic.h>
 	#include <limits.h>
 
-	#include <../../AT90USB/LUFA/Common/Common.h>
+//	#include <../../AT90USB/LUFA/Common/Common.h>
 
 	/* Defines and checks: */
 	#if defined(BUFF_STATICSIZE)
