@@ -36,7 +36,7 @@
 #include "xitoa.h"
 #include "../Drivers/TWI/twi_master_driver.h"
 
-void i2c_init(void);
+uint8_t i2c_init(void);
 void i2c_SetRegister(uint8_t addr, uint8_t value);
 
 #endif

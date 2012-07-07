@@ -55,7 +55,7 @@ int Escape(char *szPacket,char *szSource,int packetLength)
         (ch==(unsigned char)SI) ||
         (ch==(unsigned char)SO))
     {
-      //printf("Escape!!!: ch=%02x\n",ch);
+      //printf("Escape!!!: ch=%02X\n",ch);
       szPacket[i++]=(unsigned char)ESC;
       szPacket[i++]=(unsigned char)ch+0x40;
     }
@@ -90,7 +90,7 @@ int PacketiseMRG(char *szPacket,char *szSource) {
   
   // tack  on checksums
   char msg[10];
-  sprintf(msg,"%02x",uChecksum & 0xff);
+  sprintf(msg,"%02X",uChecksum & 0xff);
 
   szBuf[i++]=msg[0];
   szBuf[i++]=msg[1];

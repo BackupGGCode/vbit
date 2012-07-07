@@ -27,6 +27,7 @@
 
 #include "../Drivers/SPI/spi_driver.h"
 #include "xitoa.h"
+#include <util/delay.h>
  
 /* SPI SRAM Instruction set */
 #define SPIRAM_READ		(0x03)

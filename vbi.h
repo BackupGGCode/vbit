@@ -46,7 +46,7 @@
 
 extern volatile uint8_t vbiDone; /// Goes high when the vbi has been transmitted
 extern volatile uint32_t UTC; /// Universal Coordinated Time
-void InitVBI(void);
+uint8_t InitVBI(void);
 extern volatile uint8_t FIFOBusy; /// High when the FIFO is due to be transmitted
 // A block is 45 bytes * 17 or 18 lines = 810 bytes (max)
 // The SPIRAM is 32kb. ie 0x40000/8=32768

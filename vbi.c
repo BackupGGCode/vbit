@@ -127,7 +127,7 @@ ISR(TCD0_OVF_vect)
 } // ISR: vbi done
  
 /*! Set up the FLD interrupt */
-void InitVBI(void)
+uint8_t InitVBI(void)
 {
 
 	// LEDs_Init(); // TODO. Implement this!
@@ -153,6 +153,7 @@ void InitVBI(void)
 	/* Restore status register. */
 	SREG = sreg;
 	sei();
+	return 1; // not sure that this can fail!
 } //  InitVBI
 
  
@@ -181,6 +182,7 @@ ISR(TCE1_OVF_vect)
 	uint16_t fifoReadAddress=fifoReadIndex*FIFOBLOCKSIZE;
 	uint8_t nextBlock;
 	uint8_t field=PORTC.IN&VBIT_FLD?0:1;	// High on the even field
+// xputc('F');		// field debug
 	if (FIFOBusy) // Second time we need to set the FIFO to tx
 	{
 		// kill the clock so as not to let it bother us

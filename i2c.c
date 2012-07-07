@@ -145,19 +145,19 @@ uint8_t saa7121InitData[] = {
 0};
 
 
-/*! /brief Example code
+/*! /brief I2C Setup
  *
- *  Example code that reads the key pressed and show a value from the buffer,
- *  sends the value to the slave and read back the processed value which will
- *  be inverted and displayed after key release.
+ *  Configures the I2C on PORT C and sets up the video path
+ * \return 0 if OK, Bit 0 set if video input broken, Bit 1 if encoder broken.
  */
-void i2c_init(void)
+uint8_t i2c_init(void)
 {
 
 uint8_t buffer[256] = {
 0,
 0,0,0};
 	unsigned int timeout=0;
+	uint8_t result=0;
 	xputs(PSTR("I2C INIT\n"));
 	
 	/* Initialize TWI master. */
@@ -173,7 +173,6 @@ uint8_t buffer[256] = {
 	uint8_t BufPos = 0;
 	for (BufPos=0;saa7113InitData[BufPos];BufPos+=2)
 	{
-		xprintf(PSTR("\naddr=%02X data=%02X "),saa7113InitData[BufPos],saa7113InitData[BufPos+1]);
 		if (!TWI_MasterWrite(&twiMaster,
 							SLAVE_ADDRESS_7113,
 							&saa7113InitData[BufPos],
@@ -185,33 +184,42 @@ uint8_t buffer[256] = {
 		{
 			/* Wait until transaction is complete. */
 			timeout++;
-			if (timeout>1000) return; // Or give up all hope
+			if (timeout>1000) return 0x01; // Or give up all hope
 		}
-		xprintf(PSTR("result=%02X\n"),twiMaster.result);
+		if (twiMaster.result!=1)
+		{
+			xprintf(PSTR("\naddr=%02X data=%02X "),saa7113InitData[BufPos],saa7113InitData[BufPos+1]);
+			xprintf(PSTR("result=%02X :-(\n"),twiMaster.result);
+			result=0x01;
+		}
 	}
 	
 	buffer[0]=0;
 	for (int i=0;i<10;i++)
 	{
-	buffer[0]=i;
-	TWI_MasterWriteRead(&twiMaster,
-						SLAVE_ADDRESS_7113,
-						buffer,
-						1,
-						1);
-	timeout=0;
-	while (twiMaster.status != TWIM_STATUS_READY)
-	{
-		/* Wait until transaction is complete. */
-			timeout++;
-			if (timeout>1000) return; // Or give up all hope
-	}	
-	xprintf(PSTR("\nbuffer[0]=%02X, result=%02X\n"),buffer[0],twiMaster.result); // 5=nack
+		buffer[0]=i;
+		TWI_MasterWriteRead(&twiMaster,
+							SLAVE_ADDRESS_7113,
+							buffer,
+							1,
+							1);
+		timeout=0;
+		while (twiMaster.status != TWIM_STATUS_READY)
+		{
+			/* Wait until transaction is complete. */
+				timeout++;
+				if (timeout>1000) return 0x01; // Or give up all hope
+		}	
+		if (twiMaster.result!=1)
+		{
+			xprintf(PSTR("\nbuffer[0]=%02X, result=%02X :-(\n"),buffer[0],twiMaster.result); // 5=nack
+			result=0x01;
+		}
 	}					
-	
+
+	// Now the turn of the encoder
 	for (BufPos=0;saa7121InitData[BufPos];BufPos+=2)
 	{
-		xprintf(PSTR("\naddr=%02X data=%02X "),saa7121InitData[BufPos],saa7121InitData[BufPos+1]);
 		if (!TWI_MasterWrite(&twiMaster,
 							SLAVE_ADDRESS_7121,
 							&saa7121InitData[BufPos],
@@ -223,11 +231,17 @@ uint8_t buffer[256] = {
 		{
 			/* Wait until transaction is complete. */
 			timeout++;
-			if (timeout>1000) return; // Or give up all hope
+			if (timeout>1000) return 0x02; // Or give up all hope
 		}
-		xprintf(PSTR("result=%02X\n"),twiMaster.result);	// 1=OK	
+		if (twiMaster.result!=1)
+		{
+			xprintf(PSTR("\naddr=%02X data=%02X "),saa7121InitData[BufPos],saa7121InitData[BufPos+1]);
+			xprintf(PSTR("result=%02X :-(\n"),twiMaster.result);	// 1=OK
+			result|=0x02;
+		}
 	}	
-}
+	return result;
+} // i2_init
 
 /** Set a value to addr in SAA7121
  */
