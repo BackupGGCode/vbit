@@ -2,7 +2,7 @@
  * Description       : VBIT teletext inserter program for XMEGA
  * Compiler          : GCC
  *
- * Copyright (C) 2010, Peter Kwan
+ * Copyright (C) 2010-2012, Peter Kwan
  *
  * Permission to use, copy, modify, and distribute this software
  * and its documentation for any purpose and without fee is hereby
@@ -32,6 +32,11 @@ unsigned char Line[120];			/* Console input buffer */
 extern FATFS Fatfs[1];			/* File system object for the only logical drive */
 
 const char inifile[] = "test.ini";
+
+static unsigned char statusI2C;
+static unsigned char statusVBI;
+static unsigned char statusFIFO;
+static unsigned char statusDisk;
 
 void testIni(void)
 {
@@ -113,7 +118,7 @@ static void get_line (char *buff, int len)
 	unsigned char started=0;
 
 	for (;;) {
-		while (!(c=USB_Serial_Get())) // Any characters?
+		while (!USB_Serial_GetNB(&c)) // Any characters?
 			if (vbiDone) // do the next field?
 			{			
 				FillFIFO();
@@ -138,14 +143,11 @@ static void get_line (char *buff, int len)
 }
 
 /* SPI ram test */
-void test2(void)
+uint8_t test2(void)
 {
-	char packet[PACKETSIZE];
-	FillerPacket(packet);
 	// VBIT Mux needs setting as SCK is shared
 	GPIO_Off(VBIT_SEL);	// Low=AVR, High=VBIT
 	xprintf(PSTR("Status=%03d\n\r"),GetSerialRamStatus());	
-	int i;
 	char test[40];
 	test[0]=0x7f;
 	test[1]=0x7e;
@@ -167,20 +169,24 @@ void test2(void)
 	test[1]='y';
 	test[2]='z';
 	test[3]=0;
-	for (i=0;i<6;i++)
-	{
-		SetSerialRamAddress(SPIRAM_READ, i);
-		ReadSerialRam(test,8);
+		SetSerialRamAddress(SPIRAM_READ, 0);
+		ReadSerialRam(test,10);
 		DeselectSerialRam();
-	}
 	xputs(PSTR("Test ended Have a Nice Day\n\r"));	
-	for (i=0;i<4;i++)
-	{
-		xprintf(PSTR("%03d "),test[i]);
-		if (test[i]<' ' || test[i]>0x7f) test[i]='!';
-	}
-	xprintf(PSTR("\n\r%s\n\r"),test);
+	xprintf(PSTR("\n\r test0=%02X test1=%02X test2=%02X\n\r\n\r"), test[0],test[1],test[2]);
+	if (test[0]!=0x7f || test[1]!=0x7e || test [2]!=0x7d)
+		return 1; // fail
+	return 0; // OK
 }
+
+// report good or bad status.
+static void report(uint8_t ok)
+{
+	if (ok)
+		xputs(PSTR("bad\n\r"));
+	else
+		xputs(PSTR("good\n\r"));
+} // report
 
 /* Command interpreter for VBIT,
 	The leading SO and trailing carriage return are already removed
@@ -412,6 +418,19 @@ static int vbit_command(char *Line)
 	case 'S' : ; // Newfor. This should be a Newfor command. Hmm, but how to escape SO and SI?
 		// Work out how to escape data. The parity and reserved characters will break the CI
 		break;
+	case '?' :; // Status TODO
+		xprintf(PSTR("STATUS %02X\n\r"),statusI2C);
+		// Want to know if the chips check out and the file system is OK
+		// Video Input:
+		xprintf(PSTR("Video input: "));report(statusI2C & 0x01); // chip responds, generating field interrupts
+		// Digital Encoder
+		xprintf(PSTR("Digital encoder: "));report(statusI2C & 0x02); // chip responds
+		// FIFO
+		statusFIFO=test2();
+		xprintf(PSTR("FIFO R/W verified: "));report(statusFIFO); // we can read and write to it
+		// File system
+		xprintf(PSTR("File system: "));report(statusDisk); // There is a card, it is formatted, it has onair/pages.all
+		break;
 	default:
 		xputs(PSTR("Unknown command\n"));
 		returncode=1;
@@ -436,14 +455,16 @@ int RunVBIT(void)
 	/* Join xitoa module to USB-Serial bridge module */
 	xfunc_out = (void (*)(char))USB_Serial_Send;
 	Term_Erase_Screen();
-	xputs(PSTR("VBIT620 Inserter 0.01 Started\nKings Road Applications\n"));
+	xputs(PSTR("VBIT620 Inserter 0.02 Started\nKings Road Applications\n"));
 	GPIO_Init();	// Set up the ports
 	// Configure the spiram port and set the spiram to sequential mode
 	spiram_initialise();
 	SetSerialRamStatus(SPIRAM_MODE_SEQUENTIAL);	
-	disk_initialize(0); // Set up the SD memory card
-	i2c_init();			// Start the video processors
-	InitVBI();			// Set up the video timing
+	if (disk_initialize(0)==FR_OK) // Set up the SD memory card
+		statusDisk=0;
+	else statusDisk=1;
+	statusI2C=i2c_init();			// Start the video processors
+	statusVBI=InitVBI();			// Set up the video timing
 	f_mount(0,&Fatfs[0]);
 	LoadINISettings();
 	InitDataBroadcast();

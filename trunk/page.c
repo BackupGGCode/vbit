@@ -107,7 +107,8 @@ unsigned char ParseLine(PAGE *page, char *str)
 	case 'R':; // RT - readback time?
 		break;			
 	default :
-		xprintf(PSTR("[Parse page]unhandled page code=%c\n"),str[0]);			
+		xprintf(PSTR("[Parse page]unhandled page code=%c\n"),str[0]);	
+		return 1;
 	}
 	return 0;
 } // ParseLine

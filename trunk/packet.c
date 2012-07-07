@@ -30,7 +30,7 @@
 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+* OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
  * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
@@ -352,11 +352,14 @@ static unsigned char insert(char *packet, uint8_t field)
 			*(str++)='0';
 			*(str++)='x';
 			xatoi(&p,&pagesize);		
-			//xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);					
+			xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);					
 		}
-		// xprintf(PSTR("\n\rf=%s\n\r"),pagename);		
+		xprintf(PSTR("\n\rf=%s\n\r"),pagename);		
 		state[mag]=STATE_IDLE;
 		res=f_open(&pagefile,"pages.all",FA_READ);		// Only need to open this once!
+		// xputs(PSTR("STATE_BEGIN\n\n\r"));
+		if (res)
+			xprintf(PSTR("Failed to open pages.all, res=%d\n\n"),res); 
 	case STATE_IDLE: // If permitted to run we send the header
 		// xputs(PSTR("I"));
 		noCarousel=0; // Just until we can handle carousels
@@ -365,7 +368,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		// Need to do the whole parse and parity bit here 
 		// open pagefile
 		LED_On( LED_1 );		// LED5 - high while seeking a folder
-		f_lseek(&pagefile,pageptr); // Instead of f_open just use lseek
+		res=f_lseek(&pagefile,pageptr); // Instead of f_open just use lseek
 		LED_Off( LED_1 ); // Need to define the correct LED
 		if (res)
 		{
@@ -386,7 +389,9 @@ static unsigned char insert(char *packet, uint8_t field)
 			}
 			if (ParseLine(&page, data))
 			{
-				xprintf(PSTR("[insert]file error handler needed:%s\n"),data);			
+				xprintf(PSTR("[insert]file error handler needed:%s\n"),data);
+				state[mag]=STATE_BEGIN; // TODO. Is this the best thing to do???
+				break; // what else should we do if we get here?
 			}
 		}
 		// xprintf(PSTR("M%d P%X, "),page.mag,page.page);
@@ -426,7 +431,7 @@ static unsigned char insert(char *packet, uint8_t field)
 				*(str++)='0';
 				*(str++)='x';
 				xatoi(&p,&pagesize);
-				//xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);									
+				xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);									
 			}
 			// xprintf(PSTR("L-%s "),pagename);				
 			state[mag]=STATE_IDLE;
@@ -464,7 +469,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		break;
 	default: // Not sure what to do. This can never happen
 		state[mag]=STATE_BEGIN;
-		xputc('?');	// Oh dear
+		xputc('#');	// Oh dear
 	}	
 	return 0; // success
 } // insert
@@ -595,7 +600,7 @@ void FillFIFO(void)
 // So if it is important that you don't lose packets then remove this block.
 // See the "O" command for more details
 					testOptRate++;	// The existing code should get here at 1Hz
-					if (testOptRate>5 || OldOptRelays!=OptRelays && false)	// Steal. (Disabled by adding FALSE!)
+					if ((testOptRate>5 || OldOptRelays!=OptRelays) && false)	// Steal. (Disabled by adding FALSE!)
 					{
 						OldOptRelays=OptRelays;
 						testOptMode=(testOptMode+1)%4;
@@ -628,7 +633,7 @@ void FillFIFO(void)
 			default: // Error! Don't know what to do. Make it quiet.
 				QuietLine(packet,0x06);
 				g_OutputActions[evenfield][fifoLineCounter]='Q'; // Shut it up!
-				xputc('?');				
+				xputc('>');				
 			}
 		}
 		else
