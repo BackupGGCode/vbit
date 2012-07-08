@@ -51,6 +51,7 @@
 #include "i2c.h"
 #include "vbi.h"
 #include "databroadcast.h"
+#include "displaylist.h"
 		
 #include "../../Common/Terminal/TerminalDriver.h"
 #include "../../Common/Terminal/TerminalEvents.h"	

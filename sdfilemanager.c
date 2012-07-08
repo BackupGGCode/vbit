@@ -47,6 +47,7 @@ static void put_rc (FRESULT rc)
 
 /** Create the magazine and carousel list files
  * \param mag : approximate magazine count
+ * TODO: Call this automatically if the files don't exist already
  */
 void SDCreateLists(int mag, unsigned int pagecount)
 {
@@ -55,6 +56,7 @@ void SDCreateLists(int mag, unsigned int pagecount)
 	FIL myfile;
 	FIL pagesfile;
 	FIL currentpage;
+	FIL pageindex;		/* Binary page list */ 
 	DIR dir;			/* Directory object */
 	UINT s1, s2;	
 	char filename[80];
@@ -65,6 +67,7 @@ void SDCreateLists(int mag, unsigned int pagecount)
 	PAGE page;
 	BYTE drive=0;
 	PAGE *pageptr=&page;
+	UINT charcount;
 	
 	res=(WORD)disk_initialize(drive);	// di0
 	put_rc(f_mount(drive, &Fatfs[drive]));	// fi0
@@ -84,8 +87,9 @@ void SDCreateLists(int mag, unsigned int pagecount)
 	res=f_open(&myfile,filename,FA_CREATE_ALWAYS|FA_WRITE);
 	if (res)
 	{
-		xprintf(PSTR("[sdifilemanager]Epic Fail 1a\n"));			
+		xprintf(PSTR("[sdfilemanager]Epic Fail 1a\n"));			
 		put_rc(res);
+		return;
 	}	
 	
 	// The pages file
@@ -96,9 +100,25 @@ void SDCreateLists(int mag, unsigned int pagecount)
 	f_lseek(&pagesfile,0);					// and set the pointer back to the start
 	if (res)
 	{
-		xprintf(PSTR("[sdifilemanager]Epic Fail 1b\n"));			
+		f_close(&myfile); // Don't want this any more
+		xprintf(PSTR("[sdfilemanager]Epic Fail 1b\n"));			
 		put_rc(res);
-	}	
+		return;
+	}
+
+	// This is a binary version fixed field length version of the pages index
+	// that should be quicker to use as a random access index
+	// Each entry consists of the seek pointer (32 bits) to a page in pages.all
+	// and the file size (16 bits)
+	res=f_open(&pageindex,"pages.idx",FA_CREATE_ALWAYS|FA_WRITE);
+	if (res)
+	{
+		f_close(&myfile); // Don't want this any more
+		f_close(&pagesfile);
+		xprintf(PSTR("[sdfilemanager]Epic Fail 1c\n"));			
+		put_rc(res);
+		return;
+	}
 	
 	for(;;) {
 		res = f_readdir(&dir, &Finfo);
@@ -122,7 +142,7 @@ void SDCreateLists(int mag, unsigned int pagecount)
 			xputc(' ');
 		xprintf(PSTR("\n"));
 
-		if (strstr(Finfo.fname,".TTI")) // To do: ignore the case
+		if (strstr(Finfo.fname,".TTI")) // To do: ignore the case. But with 8.3 file system, this is not a problem
 		{
 			page.page=99;
 			page.mag=10;
@@ -131,9 +151,12 @@ void SDCreateLists(int mag, unsigned int pagecount)
 			xprintf(PSTR("Parsed page M=%d, P=%02X, S=%02X : %s\n"),pageptr->mag,pageptr->page,pageptr->subpage,Finfo.fname);
 			if (page.mag==mag || 1) // Put all the pages in the list for now
 			{
-				// Write to the index file
+				// Write to the index file (plain text version)
 				sprintf(str,"%s,%lx,%x\n",Finfo.fname,pagesfile.fptr,page.filesize);
 				res=f_puts(str,&myfile);				
+				// Write to the index file (binary version)
+				f_write(&pageindex,&(pagesfile.fptr),4,&charcount);	// 4 byte seek pointer
+				f_write(&pageindex,&(page.filesize),2,&charcount);	// 2 byte file size 
 				// res=f_puts(Finfo.fname,&myfile);
 				// f_putc((int)'\n',&myfile);
 				// Copy to the pages file. (just a big file of ALL the pages)
@@ -149,6 +172,7 @@ void SDCreateLists(int mag, unsigned int pagecount)
 	}
 	f_close(&myfile);
 	f_close(&pagesfile);
+	f_close(&pageindex);
 	xprintf(PSTR("%4u File(s),%10lu bytes total\n%4u Dir(s)"), s1, p1, s2);
 	if (f_getfree(ptr, &p1, &fs) == FR_OK)
 		xprintf(PSTR(", %10luK bytes free\n"), p1 * fs->csize / 2);
