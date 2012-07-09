@@ -51,7 +51,7 @@ static void put_rc (FRESULT rc)
  */
 void SDCreateLists(int mag, unsigned int pagecount)
 {
-	long p1,p2;
+	uint32_t p1,p2;
 	// FIL file[MAXMAG];		/* Array of output files */
 	FIL myfile;
 	FIL pagesfile;

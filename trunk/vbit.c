@@ -230,6 +230,19 @@ static int vbit_command(char *Line)
 			SDCreateLists(i,pagecount);
 		sei();
 		break;
+	case 'H': // H or HO. Set header
+		if (Line[2]=='\0')
+		{
+			strcpy_P(str,"      ");
+			strncat(str,g_Header,18);	// Just readback the header. TODO. Get the correct length
+			str[40]=0;
+		}
+		else
+		{
+			strncpy(g_Header,&Line[9],18); // accept new header
+		}
+		// TODO: Save this value back to the INI file.
+		break;
 	case 'I': // III or I2
 		// I20xnnmm
 		if (Line[2]=='2') // SAA7113 I2C. value. 0xnnmm where nn=address mm=value to write 
@@ -447,8 +460,9 @@ static int vbit_command(char *Line)
 int LoadINISettings(void)
 {
 	int n;
-	n = ini_gets("service", "outputodd", "111Q2233P44556678Q", &(g_OutputActions[0][0]), 18, inifile);	
+	n = ini_gets("service", "outputodd",  "111Q2233P44556678Q", &(g_OutputActions[0][0]), 18, inifile);	
 	n = ini_gets("service", "outputeven", "111Q2233P44556678Q", &(g_OutputActions[1][0]), 18, inifile);	
+	n = ini_gets("service", "header",     "mpp MRG DAY dd MTH", g_Header, 24, inifile);
 	return 0; // TODO: Return success or otherwise
 }
 
@@ -456,7 +470,8 @@ int RunVBIT(void)
 {
 	/* Join xitoa module to USB-Serial bridge module */
 	xfunc_out = (void (*)(char))USB_Serial_Send;
-	Term_Erase_Screen();
+	// Term_Erase_Screen();
+	BUTTON_Init( BUTTON_ALL );
 	xputs(PSTR("VBIT620 Inserter 0.02 Started\nKings Road Applications\n"));
 	GPIO_Init();	// Set up the ports
 	// Configure the spiram port and set the spiram to sequential mode
