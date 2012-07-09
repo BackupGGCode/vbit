@@ -202,8 +202,9 @@ static int vbit_command(char *Line)
 	unsigned char i;
 	char str[80];
 	char *ptr;
-	str[0]='?';
-	str[1]='\0';
+	str[0]='O';
+	str[1]='K';
+	str[2]='\0';
 	// Read, Update or not
 	switch (Line[2])
 	{
@@ -233,7 +234,7 @@ static int vbit_command(char *Line)
 		// I20xnnmm
 		if (Line[2]=='2') // SAA7113 I2C. value. 0xnnmm where nn=address mm=value to write 
 		{
-			xputs(PSTR("Setting SAA7113 I2C register\n"));
+			strcpy_P(str,PSTR("Setting SAA7113 I2C register\n"));
 			ptr=&Line[3];
 			xatoi(&ptr,&n);
 			xprintf(PSTR("Blah=%04X\n"),n);
@@ -242,12 +243,12 @@ static int vbit_command(char *Line)
 		}		
 		break;
 	case 'Y': /* Y - Version */
-		xputs(PSTR("VBIT620 Version 0.01\n"));
+		strcpy_P(str,PSTR("VBIT620 Version 0.01\n"));
 		break;		
 	case 'T': // TEST
 		// testIni();
 		test2();
-		xputs(PSTR("OK\n"));
+		strcpy_P(str,PSTR("OK\n"));
 		break;
 	case 'U': // TEST
 		Init830F1();
@@ -386,6 +387,7 @@ static int vbit_command(char *Line)
 			char ch;
 			ptr=&Line[3];
 
+			xputc('0');
 			// Validate it.
 			for (i=0;i<18;i++)
 			{
@@ -435,7 +437,7 @@ static int vbit_command(char *Line)
 		xputs(PSTR("Unknown command\n"));
 		returncode=1;
 	}
-	xprintf(PSTR("%d\n"),returncode);
+	xprintf(PSTR("%d%s\n"),returncode,str);
 	return 0;
 }
 
