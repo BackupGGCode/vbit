@@ -62,6 +62,7 @@ static unsigned char state[8]={0,0,0,0,0,0,0,0};
 #define VBILINES	17
 
 char g_OutputActions[2][18];
+char g_Header[26];
 
 int OptRelays;			/** Holds the current state of the opt out relay signals */
 
@@ -99,6 +100,14 @@ void Parity(char *packet, uint8_t offset)
  */
 void WritePrefix(char *packet, uint8_t mag, uint8_t row)
 {
+	// BEGIN: Special effect. Go to page 100 and press Button 1.
+	// Every page becomes P100.
+	if (BUTTON_GetStatus(BUTTON_1))
+	{
+		mag=1;
+	}
+    // END: Special effect
+
 	char *p=packet; // Remember that the bit order gets reversed later
 	*p++=0x55; // cri 
 	*p++=0x55; // cri
@@ -157,6 +166,13 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 {
 	static int lastsec;
 //	char date[10]; TODO: Implement something convincing
+	// BEGIN: Special effect. Go to page 100 and press Button 1.
+	// Every page becomes P100.
+	if (BUTTON_GetStatus(BUTTON_1))
+	{
+		page=0;
+	}
+    // END: Special effect
 	uint8_t hour, min, sec;
 	uint32_t utc;
 	WritePrefix(packet,mag,0);
@@ -352,7 +368,7 @@ static unsigned char insert(char *packet, uint8_t field)
 			*(str++)='0';
 			*(str++)='x';
 			xatoi(&p,&pagesize);		
-			xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);					
+			//xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);					
 		}
 		xprintf(PSTR("\n\rf=%s\n\r"),pagename);		
 		state[mag]=STATE_IDLE;
@@ -396,7 +412,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		}
 		// xprintf(PSTR("M%d P%X, "),page.mag,page.page);
 		// create the header packet. TODO: Add a system wide header caption
-		Header(packet,page.mag,page.page,page.subpage,page.control,"ORACLE PPP Wed07 Apr ITV        ");		// 6 - 24 characters plus 8 for clock
+		Header(packet,page.mag,page.page,page.subpage,page.control,g_Header);		// 6 - 24 characters plus 8 for clock
 		state[mag]=STATE_HEADER;
 		break;
 	case STATE_HEADER: // We are waiting for the field to change before we can tx
@@ -431,7 +447,7 @@ static unsigned char insert(char *packet, uint8_t field)
 				*(str++)='0';
 				*(str++)='x';
 				xatoi(&p,&pagesize);
-				xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);									
+				// xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);									
 			}
 			// xprintf(PSTR("L-%s "),pagename);				
 			state[mag]=STATE_IDLE;
