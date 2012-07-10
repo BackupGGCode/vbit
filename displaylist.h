@@ -31,19 +31,30 @@
 // What is the size of the serial ram? (32kBytes)
 #define MAXSRAM (0x8000) 
 
+typedef uint16_t NODEPTR;
+
+/* A pageindex record */
 typedef struct
 {
-uint16_t pageIndex;
-uint16_t next;
+	uint32_t seekptr;
+	uint16_t pagesize;
+} PAGEINDEXRECORD;
+
+typedef struct
+{
+NODEPTR pageIndex;
+NODEPTR next;
 // uint8_t mag;	// 0..7 where 0 is mapped to 8. mag is implicit
 uint8_t page;	// Page number 0x00 to 0xff
 uint8_t subpage; // 00 to 99 (not part of teletext standard).
 // Value of subpage also defines the node type. N=00..99, R=100, J=101, F=102   
 } DISPLAYNODE; 
 
+
 #define ROOTNODE 100
 #define JUNCTIONNODE 101
 #define FREENODE 102
+#define NULLNODE 103
 
 
 #define MAXNODES (MAXSRAM/sizeof(node))
@@ -54,5 +65,9 @@ void SetNode(DISPLAYNODE node, uint16_t i);
 /** clear out the whole display list
 */
 void initDisplayList(void);
+
+
+// This is a bit complicated as we need to fix whatever list it came from.
+void DeleteNode(NODEPTR i);
 
 #endif

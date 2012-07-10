@@ -483,7 +483,7 @@ int RunVBIT(void)
 	statusI2C=i2c_init();			// Start the video processors
 	statusVBI=InitVBI();			// Set up the video timing
 	f_mount(0,&Fatfs[0]);
-	initDisplayList();
+	InitDisplayList();
 	LoadINISettings();
 	InitDataBroadcast();
 	for (;;)
