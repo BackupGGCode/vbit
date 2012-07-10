@@ -28,7 +28,7 @@
  * ====================
  * The display list controls the order of page transmission.
  * The display list:
- * Lives in the SRAM.
+ * Lives in the SRAM therefore it must be constructed at the start of each run
  * Uses a linked list.
  * Handles page updates such as add, replace, remove.
  * Maintains a sorted list of pages
@@ -39,7 +39,6 @@
  * Each node is a fixed size structure which contains:
  * Page pointer
  * Next node
- * Magazine
  * Page
  * Subpage 
  * Node type
@@ -79,9 +78,10 @@
  
  #include "displaylist.h"
  
- static uint16_t FreeList; // FreeList is an index to the DisplayList. It points to the first free node.
+ static NODEPTR sFreeList; // FreeList is an index to the DisplayList. It points to the first free node.
  
- void SetNode(DISPLAYNODE node, uint16_t i)
+ /* Write node to slot i in the serial ram */
+ void SetNode(DISPLAYNODE node, NODEPTR i)
  {
 	i=i*sizeof(DISPLAYNODE);	// Find the actual serial ram address
 	// TODO MAYBE. Check that i is less than MAXSRAM
@@ -89,31 +89,135 @@
 	SetSPIRamAddress(SPIRAM_WRITE, i); // Write this node
 	WriteSPIRam((char*)&node, sizeof(DISPLAYNODE)); // Assuming data is in same order as declaration with no byte alignment padding
 	DeselectSPIRam();
- }
+ } // SetNode
  
- void initDisplayList(void)
+ /* Fetch a node from the slot in serial ram
+  * Would this be better being passed by reference?
+  */ 
+ DISPLAYNODE GetNode(NODEPTR i)
+ {
+	DISPLAYNODE node;
+	i=i*sizeof(DISPLAYNODE);	// Find the actual serial ram address
+	SetSPIRamAddress(SPIRAM_READ, i); // Write this node
+	ReadSPIRam((char *)&node, sizeof(DISPLAYNODE));
+	DeselectSPIRam();
+	return node;
+ } // GetNode
+ 
+ /** Grab a node from the free list
+  * \return a node pointer
+  */
+ NODEPTR NewNode(void)
+ {
+	NODEPTR ix=sFreeList;	// The first node in the free list is what we are going to grab
+	DISPLAYNODE node=GetNode(sFreeList); // So we need to update the FreeList pointer
+	// TODO: Check that we didn't empty the free list
+	if (node.subpage==NULLNODE)
+	{
+		// TODO: Oh dear. What can we do now? We are out of nodes
+	}
+	else
+		sFreeList=node.next;
+	return ix;
+ } // NewNode
+
+ /** Given a serial ram slot i, 
+  * It clears out slot i and links it into the free list
+  * We probably should call this from initDisplayList too as the code is duplicated
+  * WARNING. You must unlink this node or the display list will get chopped
+  */
+ void ReturnToFreeList(NODEPTR i)
+ {
+	DISPLAYNODE node;
+	// Set the values in this node
+ 	node.pageIndex=0;
+	node.page=0;
+	node.subpage=FREENODE;
+	node.next=sFreeList; // This node points to the rest of the list
+	SetNode(node,i);	// TODO: Check that i is in range
+	sFreeList=i;		// And the free list now points to this node
+ } // ReturnToFreeList
+ 
+ /* Sets the initial value of all the display list slots
+  * and joins them together into a freelist.
+  */
+ void MakeFreeList(void)
  {
 	int i;
 	DISPLAYNODE node; 
 	xprintf(PSTR("Display list can contain up to %d nodes \n\r"),MAXNODES);
-	
-	// Initialise the serial RAM
-	spiram_init();
-	SetSPIRamStatus(SPIRAM_MODE_SEQUENTIAL);	
 
-	// Set values common to all free nodes
+	sFreeList=0;
+	// We need to make one node to start with
 	node.pageIndex=0;
 	node.page=0;
-	node.subpage=FREENODE;
-	for (i=0;i<MAXNODES;i++)
+	node.next=0;
+	node.subpage=NULLNODE;
+	SetNode(node,0);
+	for (i=1;i<MAXNODES;i++)
 	{
-		if (i<MAXNODES-1)
-			node.next=i+1;
-		else
-			node.next=0;	// Last node has no next
-		SetNode(node,i);
+		ReturnToFreeList(i);
 	}
-	FreeList=0;
 	// The FreeList is now ready
-	// Now scan the pages list and make a sorted list, creating nodes for Root, Node and Junction
+ } // MakeFreeList
+ 
+ /** This takes the page.idx list and makes a sorted display list out of it
+  * We need to look at all the pages and extract their MPPSS
+  */
+ void ScanPageList(void)
+ {
+	FIL PageIndex;		// page.idx
+	FIL currentpage;	// page.all
+	DIR dir;			/* Directory object */
+	
+	BYTE drive=0;
+	FRESULT res;	
+	PAGEINDEXRECORD ixRec;
+	UINT charcount;	
+	// First we need to open the drive and navigate to the correct location
+	res=(WORD)disk_initialize(drive);	// di0
+	put_rc(f_mount(drive, &Fatfs[drive]));	// fi0
+	put_rc(f_chdir("onair"));	
+	
+	res=f_open(&PageIndex,"pages.idx",FA_READ);
+	if (res)
+	{
+		xprintf(PSTR("[displaylist]Epic Fail 1\n"));			
+		put_rc(res);
+		return;
+	}
+	
+// TODO: Open page.all	 
+	 
+	while (!f_eof(&PageIndex))
+	{
+		f_read(&PageIndex,&ixRec,sizeof(ixRec),&charcount);
+		xprintf(PSTR("seek %ld size %d \n\r"),ixRec.seekptr,ixRec.pagesize);
+		// TODO: Use seekptr on page.all and parse the page
+		// TODO: Extract the M PP SS fields
+		// TODO: Find or create the root of the mag M 
+		// Scan the mag to find the PP, else create PP
+		// If page already exists and has a different subcode...
+		// then convert to a junction node and make carousel list.
+		// If Junction node already exists, insert the new page at the correct sorted position.
+		
+	}
+	f_close(&PageIndex);
+	// f_close(&currentPage); // TBA
  }
+ 
+ /** Set up all the lists.
+  * Scan all the existing pages and make a sorted list
+  */
+ void InitDisplayList(void)
+ {
+ 	// Initialise the serial RAM
+	spiram_init();
+	SetSPIRamStatus(SPIRAM_MODE_SEQUENTIAL);
+	// Put all the slots into the free list
+	MakeFreeList();
+	// Now scan the pages list and make a sorted list, creating nodes for Root, Node and Junction
+	ScanPageList();
+ } // initDisplayList
+ 
+ 
