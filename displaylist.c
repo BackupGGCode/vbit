@@ -162,24 +162,37 @@
 	// The FreeList is now ready
  } // MakeFreeList
  
+ /** Given a mag, this adds the mag to the Root list
+  *  and returns a Node pointer to the root node
+  */
+ NODEPTR CreateRoot(NODEPTR rootNode,uint8_t mag)
+ {
+	xprintf(PSTR("Creating Root for mag %d\n\r"),mag);
+	return NULLPTR; // TODO: The real code
+ } // CreateRoot
+ 
 /** FindMag - Find a magazine in the root list
  * \return Pointer to the magazine or NULLPTR if failed
  */
  
 NODEPTR FindMag(NODEPTR dispList,uint8_t mag)
 {
-	// The display list has nothing?
-	if (dispList==NULLPTR)
-		return NULLPTR;
-	// while (1)
+	DISPLAYNODE node;
+	// The display list has to be set to something
+	while (dispList!=NULLPTR)
 	{
-	// Fetch the display List Item
-	// Is it a root node?
-	// if not a root node then return NULLPTR
-	// Is the magazine the one that we seek?
-	// YAY! return dispList
+		// Fetch the display List Item
+		node=GetNode(dispList);
+		// Is not a root node? Then return NULL
+		if (node.subpage!=ROOTNODE)
+			break;
+		// Is the magazine the one that we seek?
+		if (node.page==mag) // !! For Root Nodes, page contains mag. !!
+			return dispList;	// YAY! return dispList
+		// Not found yet? Get the next one.
+		dispList=node.page;
 	}
-	return NULLPTR; // TODO. The actual code
+	return NULLPTR; // We failed. Sorry.
 } // FindMag
 
  
@@ -245,7 +258,11 @@ NODEPTR FindMag(NODEPTR dispList,uint8_t mag)
 		// TODO: Find or create the root of the mag M 
 		// Something like 
 		root=FindMag(sDisplayList,page.mag);
-		// if (root==NULLNODE) root=CreateRoot(rootNode,page.mag);
+		// HOWEVER, sDisplayList should probably be implied! TODO. Simplify
+		if (root==NULLPTR)
+		{
+			root=CreateRoot(sDisplayList,page.mag); // Probably drop sDisplayList
+		}
 		// Scan the mag to find the PP, else create PP
 		// If page already exists and has a different subcode...
 		// then convert to a junction node and make carousel list.
