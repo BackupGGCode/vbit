@@ -79,6 +79,7 @@
  #include "displaylist.h"
  
  static NODEPTR sFreeList; // FreeList is an index to the DisplayList. It points to the first free node.
+ static NODEPTR sDisplayList; // Root of the display list
  
  /* Write node to slot i in the serial ram */
  void SetNode(DISPLAYNODE node, NODEPTR i)
@@ -161,20 +162,49 @@
 	// The FreeList is now ready
  } // MakeFreeList
  
+/** FindMag - Find a magazine in the root list
+ * \return Pointer to the magazine or NULLPTR if failed
+ */
+ 
+NODEPTR FindMag(NODEPTR dispList,uint8_t mag)
+{
+	// The display list has nothing?
+	if (dispList==NULLPTR)
+		return NULLPTR;
+	// while (1)
+	{
+	// Fetch the display List Item
+	// Is it a root node?
+	// if not a root node then return NULLPTR
+	// Is the magazine the one that we seek?
+	// YAY! return dispList
+	}
+	return NULLPTR; // TODO. The actual code
+} // FindMag
+
+ 
  /** This takes the page.idx list and makes a sorted display list out of it
   * We need to look at all the pages and extract their MPPSS
   */
  void ScanPageList(void)
  {
 	FIL PageIndex;		// page.idx
-	FIL currentpage;	// page.all
+	FIL PageAll;	// page.all
 	DIR dir;			/* Directory object */
 	
 	BYTE drive=0;
 	FRESULT res;	
 	PAGEINDEXRECORD ixRec;
 	UINT charcount;	
-	// First we need to open the drive and navigate to the correct location
+	PAGE page;
+	const unsigned char MAXLINE=80;
+	
+	char line[MAXLINE];
+	char *str;
+	
+	NODEPTR root;
+	
+	// Open the drive and navigate to the correct location
 	res=(WORD)disk_initialize(drive);	// di0
 	put_rc(f_mount(drive, &Fatfs[drive]));	// fi0
 	put_rc(f_chdir("onair"));	
@@ -182,29 +212,48 @@
 	res=f_open(&PageIndex,"pages.idx",FA_READ);
 	if (res)
 	{
-		xprintf(PSTR("[displaylist]Epic Fail 1\n"));			
+		xprintf(PSTR("[displaylist]Epic Fail. Can not open pages.idx\n"));			
 		put_rc(res);
+		// At this point we might try to create page.all and pages.idx
 		return;
 	}
 	
-// TODO: Open page.all	 
-	 
+	res=f_open(&PageAll,"pages.all",FA_READ);
+	if (res)
+	{
+		xprintf(PSTR("[displaylist]Epic Fail. Can not open page.all\n"));			
+		put_rc(res);
+		f_close(&PageAll);
+		return;
+	}
+	
 	while (!f_eof(&PageIndex))
 	{
 		f_read(&PageIndex,&ixRec,sizeof(ixRec),&charcount);
 		xprintf(PSTR("seek %ld size %d \n\r"),ixRec.seekptr,ixRec.pagesize);
 		// TODO: Use seekptr on page.all and parse the page
+		f_lseek(&PageAll,ixRec.seekptr);	// and set the pointer back to the start
 		// TODO: Extract the M PP SS fields
+		page.mag=9;
+		while (page.mag==9) // TODO: Prevent this from going badly wrong!!!
+		{
+			str=f_gets(line,MAXLINE,&PageAll);		
+			ParseLine(&page,str);
+			//TODO: Check that we didn't read past the end of this page
+		}
+		xprintf(PSTR("M PP SS %1d %02X %02d\n\r"),page.mag,page.page,page.subpage);
 		// TODO: Find or create the root of the mag M 
+		// Something like 
+		root=FindMag(sDisplayList,page.mag);
+		// if (root==NULLNODE) root=CreateRoot(rootNode,page.mag);
 		// Scan the mag to find the PP, else create PP
 		// If page already exists and has a different subcode...
 		// then convert to a junction node and make carousel list.
 		// If Junction node already exists, insert the new page at the correct sorted position.
-		
 	}
 	f_close(&PageIndex);
-	// f_close(&currentPage); // TBA
- }
+	f_close(&PageAll);
+ } // ScanPageList
  
  /** Set up all the lists.
   * Scan all the existing pages and make a sorted list
@@ -214,6 +263,9 @@
  	// Initialise the serial RAM
 	spiram_init();
 	SetSPIRamStatus(SPIRAM_MODE_SEQUENTIAL);
+	
+	sDisplayList=NULLPTR;
+	sFreeList=NULLPTR;
 	// Put all the slots into the free list
 	MakeFreeList();
 	// Now scan the pages list and make a sorted list, creating nodes for Root, Node and Junction

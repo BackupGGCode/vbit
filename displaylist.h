@@ -51,10 +51,14 @@ uint8_t subpage; // 00 to 99 (not part of teletext standard).
 } DISPLAYNODE; 
 
 
+// extra subpage values
 #define ROOTNODE 100
 #define JUNCTIONNODE 101
 #define FREENODE 102
 #define NULLNODE 103
+
+// For Display List pointers that don't go anywhere
+#define NULLPTR 0xffff
 
 
 #define MAXNODES (MAXSRAM/sizeof(node))
@@ -64,7 +68,7 @@ void SetNode(DISPLAYNODE node, uint16_t i);
 
 /** clear out the whole display list
 */
-void initDisplayList(void);
+void InitDisplayList(void);
 
 
 // This is a bit complicated as we need to fix whatever list it came from.
