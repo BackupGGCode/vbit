@@ -40,6 +40,13 @@ typedef struct
 	uint16_t pagesize;
 } PAGEINDEXRECORD;
 
+
+/** defines a display list node. However...
+ * Root: pageIndex actually points to a display list for the mag.
+ *       Next points to the next Root node OR NULLPTR
+ *       Page actually holds the Mag 0..7 (where 0=page 8)
+ *       Subpage is set to ROOTNODE.
+ */
 typedef struct
 {
 NODEPTR pageIndex;
