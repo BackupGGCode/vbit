@@ -167,8 +167,34 @@
   */
  NODEPTR CreateRoot(NODEPTR rootNode,uint8_t mag)
  {
+	DISPLAYNODE node;
+	NODEPTR np;
+	np=NULLPTR;
+	node.pageindex=NULLPTR;
+	node.next=NULLPTR;
+	node.page=mag;	// for the root nodes, page is used to hold mag
+	node.subpage=ROOTNODE;	// Identify this as a root node.
 	xprintf(PSTR("Creating Root for mag %d\n\r"),mag);
-	return NULLPTR; // TODO: The real code
+	// If the display list is completely empty we need to start one now
+	if (sDisplayList==NULLPTR)
+	{
+		// create the node
+		sDisplayList=np=NewNode();
+		SetNode(np,node);		
+	}
+	// Now we are guaranteed to have something
+	// Traverse the Root and look for the mag.
+	// Should we keep the mag list sorted? Can't see any big advantage.
+	// Got to the end without finding the root mag?
+	// Get a free node and tack it on the end for the new mag
+	{
+		np=NewNode();
+		// now set the new node details, add the link and setnode it
+	}
+	
+	
+	
+	return np; // TODO: The real code
  } // CreateRoot
  
 /** FindMag - Find a magazine in the root list
@@ -261,6 +287,7 @@ NODEPTR FindMag(NODEPTR dispList,uint8_t mag)
 		// HOWEVER, sDisplayList should probably be implied! TODO. Simplify
 		if (root==NULLPTR)
 		{
+			// If there is no root for this map, lets go and make one
 			root=CreateRoot(sDisplayList,page.mag); // Probably drop sDisplayList
 		}
 		// Scan the mag to find the PP, else create PP
