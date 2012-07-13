@@ -42,14 +42,14 @@ typedef struct
 
 
 /** defines a display list node. However...
- * Root: pageIndex actually points to a display list for the mag.
+ * Root: pageindex actually points to a display list for the mag.
  *       Next points to the next Root node OR NULLPTR
  *       Page actually holds the Mag 0..7 (where 0=page 8)
  *       Subpage is set to ROOTNODE.
  */
 typedef struct
 {
-NODEPTR pageIndex;
+NODEPTR pageindex;
 NODEPTR next;
 // uint8_t mag;	// 0..7 where 0 is mapped to 8. mag is implicit
 uint8_t page;	// Page number 0x00 to 0xff

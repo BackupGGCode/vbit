@@ -116,9 +116,11 @@
 	if (node.subpage==NULLNODE)
 	{
 		// TODO: Oh dear. What can we do now? We are out of nodes
+		xprintf(PSTR("[NewNode] NULLNODE error\n\r"));
 	}
 	else
 		sFreeList=node.next;
+	// xprintf(PSTR("[NewNode] Returns %d\n\r"),ix);
 	return ix;
  } // NewNode
 
@@ -131,7 +133,7 @@
  {
 	DISPLAYNODE node;
 	// Set the values in this node
- 	node.pageIndex=0;
+ 	node.pageindex=0;
 	node.page=0;
 	node.subpage=FREENODE;
 	node.next=sFreeList; // This node points to the rest of the list
@@ -150,7 +152,7 @@
 
 	sFreeList=0;
 	// We need to make one node to start with
-	node.pageIndex=0;
+	node.pageindex=0;
 	node.page=0;
 	node.next=0;
 	node.subpage=NULLNODE;
@@ -163,38 +165,69 @@
  } // MakeFreeList
  
  /** Given a mag, this adds the mag to the Root list
-  *  and returns a Node pointer to the root node
+  *  \return Node pointer to the root node of the newly created magazine.
+  * We call this if findmag failed
   */
  NODEPTR CreateRoot(NODEPTR rootNode,uint8_t mag)
  {
-	DISPLAYNODE node;
-	NODEPTR np;
+	DISPLAYNODE node,n;
+	NODEPTR np,lastnp,newrootnp,savenp;
 	np=NULLPTR;
-	node.pageindex=NULLPTR;
+	node.pageindex=NULLPTR; // Node is the new map root
 	node.next=NULLPTR;
 	node.page=mag;	// for the root nodes, page is used to hold mag
 	node.subpage=ROOTNODE;	// Identify this as a root node.
+	newrootnp=NewNode();	// Our new mag will be written to here
 	xprintf(PSTR("Creating Root for mag %d\n\r"),mag);
 	// If the display list is completely empty we need to start one now
 	if (sDisplayList==NULLPTR)
 	{
 		// create the node
-		sDisplayList=np=NewNode();
-		SetNode(np,node);		
+		sDisplayList=NewNode();
+		SetNode(node,sDisplayList);
 	}
-	// Now we are guaranteed to have something
-	// Traverse the Root and look for the mag.
-	// Should we keep the mag list sorted? Can't see any big advantage.
-	// Got to the end without finding the root mag?
-	// Get a free node and tack it on the end for the new mag
+	else
 	{
-		np=NewNode();
-		// now set the new node details, add the link and setnode it
+		// We have a list to traverse
+		// Find where to insert the new mag, keep it sorted by mag
+		lastnp=np=sDisplayList;
+		while (1)
+		{
+			n=GetNode(np);
+			if (n.page<mag) // our node is not found yet
+			{
+				if (n.next==NULLPTR) // Last node? Link our node
+				{
+					// Set the new root and put the node back
+					n.next=newrootnp; // This node has a new child
+					SetNode(n,np);	// Update the last root node
+					SetNode(node,newrootnp);	// And save the new mag root
+					break;
+				}
+				else
+				{
+					lastnp=np;	// Save the last node in case we want to insert.
+					np=n.next;
+				}
+			}
+			if (n.page>mag) // We have gone past.
+			{
+				// Do an insert.
+				// First update the last node by pointing next to our new mag root				
+				n=GetNode(lastnp);
+				savenp=n.next;
+				n.next=newrootnp;
+				SetNode(n,lastnp);
+				// And update the new map root with the moved next link
+				node.next=savenp;
+				SetNode(node,newrootnp);
+				break;	// Done 
+			}
+		} // while
+		return np;	// This is the root of the new magazine
 	}
 	
-	
-	
-	return np; // TODO: The real code
+	return newrootnp; // We always return what we just created
  } // CreateRoot
  
 /** FindMag - Find a magazine in the root list
@@ -203,21 +236,30 @@
  
 NODEPTR FindMag(NODEPTR dispList,uint8_t mag)
 {
+	xprintf(PSTR("[FindMag]Enters\n\r]"));
 	DISPLAYNODE node;
 	// The display list has to be set to something
 	while (dispList!=NULLPTR)
 	{
+		xprintf(PSTR("[FindMag]At node %d\n\r]"),dispList);
 		// Fetch the display List Item
 		node=GetNode(dispList);
 		// Is not a root node? Then return NULL
 		if (node.subpage!=ROOTNODE)
+		{
+			xprintf(PSTR("[FindMag] Not a root node\n\r]"));
 			break;
+		}
 		// Is the magazine the one that we seek?
 		if (node.page==mag) // !! For Root Nodes, page contains mag. !!
+		{
+			xprintf(PSTR("[FindMag] Found mag %d!\n\r]"),mag);
 			return dispList;	// YAY! return dispList
+		}
 		// Not found yet? Get the next one.
-		dispList=node.page;
+		dispList=node.next;
 	}
+	xprintf(PSTR("[FindMag]Failed to find mag\n\r]"));
 	return NULLPTR; // We failed. Sorry.
 } // FindMag
 
@@ -228,9 +270,7 @@ NODEPTR FindMag(NODEPTR dispList,uint8_t mag)
  void ScanPageList(void)
  {
 	FIL PageIndex;		// page.idx
-	FIL PageAll;	// page.all
-	DIR dir;			/* Directory object */
-	
+	FIL PageAll;	// page.all	
 	BYTE drive=0;
 	FRESULT res;	
 	PAGEINDEXRECORD ixRec;
