@@ -90,6 +90,9 @@
 	SetSPIRamAddress(SPIRAM_WRITE, i); // Write this node
 	WriteSPIRam((char*)&node, sizeof(DISPLAYNODE)); // Assuming data is in same order as declaration with no byte alignment padding
 	DeselectSPIRam();
+	if (node.subpage==FREENODE)
+		xprintf(PSTR("Ouch! SetNode just stored a FREENODE\n\r"));
+	
  } // SetNode
  
  /* Fetch a node from the slot in serial ram
@@ -102,8 +105,17 @@
 	SetSPIRamAddress(SPIRAM_READ, i); // Write this node
 	ReadSPIRam((char *)&node, sizeof(DISPLAYNODE));
 	DeselectSPIRam();
+	if (node.subpage==FREENODE)
+		xprintf(PSTR("[GetNode]Ouch! Just got a FREENODE\n\r"));
 	return node;
  } // GetNode
+ 
+ void DumpNode(NODEPTR np)
+ {
+	DISPLAYNODE n;
+	n=GetNode(np);
+	xprintf(PSTR("Node (%d) pageindex=%d next=%d page=%d subpage=%d\n\r"),np,n.pageindex,n.next,n.page,n.subpage);
+ } // DumpNode
  
  /** Grab a node from the free list
   * \return a node pointer
@@ -157,7 +169,7 @@
 	node.next=0;
 	node.subpage=NULLNODE;
 	SetNode(node,0);
-	for (i=1;i<MAXNODES;i++)
+	for (i=MAXNODES-1;i>=0;i--)
 	{
 		ReturnToFreeList(i);
 	}
@@ -183,7 +195,7 @@
 	if (sDisplayList==NULLPTR)
 	{
 		// create the node
-		sDisplayList=NewNode();
+		sDisplayList=newrootnp;
 		SetNode(node,sDisplayList);
 	}
 	else
@@ -194,10 +206,13 @@
 		while (1)
 		{
 			n=GetNode(np);
+			if (n.subpage!=ROOTNODE)
+				xprintf(PSTR("[CreateRoot] ERROR. Not a Root node"));
 			if (n.page<mag) // our node is not found yet
 			{
 				if (n.next==NULLPTR) // Last node? Link our node
 				{
+					xprintf(PSTR("[CreateRoot] Adding to the end"));
 					// Set the new root and put the node back
 					n.next=newrootnp; // This node has a new child
 					SetNode(n,np);	// Update the last root node
@@ -213,6 +228,7 @@
 			if (n.page>mag) // We have gone past.
 			{
 				// Do an insert.
+					xprintf(PSTR("[CreateRoot] Doing an insert"));
 				// First update the last node by pointing next to our new mag root				
 				n=GetNode(lastnp);
 				savenp=n.next;
@@ -224,11 +240,92 @@
 				break;	// Done 
 			}
 		} // while
-		return np;	// This is the root of the new magazine
 	}
 	
 	return newrootnp; // We always return what we just created
  } // CreateRoot
+ 
+ /** Insert a page into a magazine
+  * \param np - Pointer to the mag root node
+  * \param node - node to insert
+  *  \return Might be useful to return something 
+  * This is called with a mag root pointer returned by FindMag
+  */
+ void LinkPage(NODEPTR np,DISPLAYNODE newnode)
+ {
+	DISPLAYNODE node,n;
+	NODEPTR lastnp,savenp,newnodeptr;
+	uint8_t pp; // Page number to insert
+	
+	// Validate the magazine root node
+	if (np==NULLPTR)
+	{
+		xprintf(PSTR("[LinkPage] null root error\n\r"));
+		return;
+	}
+	
+	node=GetNode(np);
+	
+	if (node.subpage!=ROOTNODE)
+	{
+		xprintf(PSTR("[LinkPage] ERROR, Initial node is not a root node (%d)\n\r"),node.subpage);
+		return;
+	}
+	
+	// Validations done. Allocate a place for our inserted node.
+	newnodeptr=NewNode();
+	
+	// First time the mag will be empty.
+	if (node.page==NULLPTR)
+	{
+		node.page=newnodeptr;	// Point the root node to our new node
+		SetNode(node,np);
+		SetNode(newnode,newnodeptr);	// Tack the new node on the end
+		return;
+	}
+	
+	// The magazine list is not empty. We traverse it looking for the insert point
+	pp=newnode.page;
+	lastnp=np;
+	for (;1;)
+	{
+		// We got to the end of the list without finding it?
+		// Tack our new node onto the end
+		if (node.next==NULLPTR)
+		{
+			node.next=newnodeptr;
+			SetNode(node,np);
+			SetNode(newnode,newnodeptr);
+			break;
+		}
+		// Not got there yet?
+		if (node.page>pp)
+		{
+			lastnp=np;			// Save this, we might need it
+			np=node.next;		// Traverse to the next node
+			node=GetNode(np);
+		}
+		// Did we get there?		// TODO: Consider subpages
+		if (node.page>=pp)
+		{
+			// Go back one link and point it to the new node			
+			n=GetNode(lastnp);
+			n.next=newnodeptr;
+			SetNode(n,lastnp);
+			// Special case. Page exists already. Dump the previous page we don't want
+			if (node.page==pp)
+			{
+				newnode.next=node.next;	// Save the next pointer before we dispose of the node
+				ReturnToFreeList(np);
+			}
+			else
+				newnode.next=np;	// Link to the node 
+			SetNode(newnode,newnodeptr);
+			
+			break;
+		}
+	} // for
+ } // LinkPage
  
 /** FindMag - Find a magazine in the root list
  * \return Pointer to the magazine or NULLPTR if failed
@@ -236,24 +333,24 @@
  
 NODEPTR FindMag(NODEPTR dispList,uint8_t mag)
 {
-	xprintf(PSTR("[FindMag]Enters\n\r]"));
+	xprintf(PSTR("[FindMag]Enters\n\r"));
 	DISPLAYNODE node;
 	// The display list has to be set to something
 	while (dispList!=NULLPTR)
 	{
-		xprintf(PSTR("[FindMag]At node %d\n\r]"),dispList);
 		// Fetch the display List Item
 		node=GetNode(dispList);
+		xprintf(PSTR("[FindMag]"));DumpNode(dispList);
 		// Is not a root node? Then return NULL
 		if (node.subpage!=ROOTNODE)
 		{
-			xprintf(PSTR("[FindMag] Not a root node\n\r]"));
+			xprintf(PSTR("[FindMag] Not a root node\n\r"));
 			break;
 		}
 		// Is the magazine the one that we seek?
 		if (node.page==mag) // !! For Root Nodes, page contains mag. !!
 		{
-			xprintf(PSTR("[FindMag] Found mag %d!\n\r]"),mag);
+			xprintf(PSTR("[FindMag] Found mag %d!\n\r"),mag);
 			return dispList;	// YAY! return dispList
 		}
 		// Not found yet? Get the next one.
@@ -276,12 +373,14 @@ NODEPTR FindMag(NODEPTR dispList,uint8_t mag)
 	PAGEINDEXRECORD ixRec;
 	UINT charcount;	
 	PAGE page;
+	uint8_t ix;
 	const unsigned char MAXLINE=80;
 	
 	char line[MAXLINE];
 	char *str;
 	
 	NODEPTR root;
+	DISPLAYNODE node;
 	
 	// Open the drive and navigate to the correct location
 	res=(WORD)disk_initialize(drive);	// di0
@@ -306,7 +405,7 @@ NODEPTR FindMag(NODEPTR dispList,uint8_t mag)
 		return;
 	}
 	
-	while (!f_eof(&PageIndex))
+	for (ix=0;!f_eof(&PageIndex);ix++)
 	{
 		f_read(&PageIndex,&ixRec,sizeof(ixRec),&charcount);
 		xprintf(PSTR("seek %ld size %d \n\r"),ixRec.seekptr,ixRec.pagesize);
@@ -330,6 +429,11 @@ NODEPTR FindMag(NODEPTR dispList,uint8_t mag)
 			// If there is no root for this map, lets go and make one
 			root=CreateRoot(sDisplayList,page.mag); // Probably drop sDisplayList
 		}
+		node.pageindex=ix;
+		node.page=page.page;
+		node.subpage=page.subpage;
+		node.next=NULLPTR;
+		LinkPage(root,node);
 		// Scan the mag to find the PP, else create PP
 		// If page already exists and has a different subcode...
 		// then convert to a junction node and make carousel list.
