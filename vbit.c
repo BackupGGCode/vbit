@@ -271,7 +271,8 @@ static int vbit_command(char *Line)
 		// We want to be able to test various ATP950 modes.
 		// read the parameter
 		ptr=&Line[2];	
-		xatoi(&ptr,&OptOutMode);
+		xatoi(&ptr,&n);
+		OptOutMode=n;
 		xprintf(PSTR("W=%04X\n"),OptOutMode);
 		// Which command? Set the appropriate opt out mode
 		switch (OptOutMode)

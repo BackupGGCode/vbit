@@ -40,7 +40,6 @@ typedef struct
 	uint16_t pagesize;
 } PAGEINDEXRECORD;
 
-
 /** defines a display list node. However...
  * Root: pageindex actually points to a display list for the mag.
  *       Next points to the next Root node OR NULLPTR
@@ -52,10 +51,11 @@ typedef struct
 NODEPTR pageindex;
 NODEPTR next;
 // uint8_t mag;	// 0..7 where 0 is mapped to 8. mag is implicit
-uint8_t page;	// Page number 0x00 to 0xff
+// uint8_t page;	// Page number 0x00 to 0xff
 uint8_t subpage; // 00 to 99 (not part of teletext standard).
 // Value of subpage also defines the node type. N=00..99, R=100, J=101, F=102   
 } DISPLAYNODE; 
+
 
 
 // extra subpage values
@@ -67,18 +67,41 @@ uint8_t subpage; // 00 to 99 (not part of teletext standard).
 // For Display List pointers that don't go anywhere
 #define NULLPTR 0xffff
 
+/**
+We don't have the luxury of a compiler that can manage the serial ram allocation.
+We must track where we put stuff ourself.
+The data is in two parts, a big index
+1) 2D array of NODEPTR arranged mag x page. Each cell in this array points to either
+	a NULLPTR or a pointer to a page list
+2) A set of linked nodes one for each page. A static page only has one node. A carousel
+	of subpages can have up to 99 nodes.
 
-#define MAXNODES (MAXSRAM/sizeof(node))
+// A declaration would ordinarily look like this:
+NODEPTR PageArray[8][256];
+DISPLAYNODE PageList[(MAXSRAM-sizeof(PageArray))/sizeof(DISPLAYNODE)];
 
-// Copy node to address i in SRAM
-void SetNode(DISPLAYNODE node, uint16_t i);
+The memory allocation map is computed thus:
+PageArray has 8 magazines, each of which can have 256 pages. Each cell is a 2 byte NODEPTR.
+8x256x2=4kB or 0x1000
+So PageArray is 0x0000 to 0x1000
+
+The maximum number of nodes that can fit in the PageList are:
+(0x8000-0x1000)/2=0x1666 or 5734
+
+
+
+ */
+
+// Should be array size 4096 and node count 5734
+#define PAGEARRAYSIZE (8 * 256 * sizeof (NODEPTR))
+#define MAXNODES ((MAXSRAM - PAGEARRAYSIZE)/sizeof(DISPLAYNODE))
+
+
 
 /** clear out the whole display list
 */
 void InitDisplayList(void);
 
 
-// This is a bit complicated as we need to fix whatever list it came from.
-void DeleteNode(NODEPTR i);
 
 #endif
