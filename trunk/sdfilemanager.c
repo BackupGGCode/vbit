@@ -48,6 +48,7 @@ static void put_rc (FRESULT rc)
 /** Create the magazine and carousel list files
  * \param mag : approximate magazine count
  * TODO: Call this automatically if the files don't exist already
+ * WARNING. The file requirements are liable to destroy the heap. It may crash after this.
  */
 void SDCreateLists(int mag, unsigned int pagecount)
 {

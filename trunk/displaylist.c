@@ -217,6 +217,7 @@
  {
 	NODEPTR np, newnodeptr;
 	uint16_t cellAddress;
+	char ch;
 	DISPLAYNODE node;
 	// What is the address of this page?
 	cellAddress=(mag*0x100+page)*sizeof(NODEPTR);
@@ -232,7 +233,68 @@
 		node.pageindex=ix;			// Construct the node
 		node.subpage=subpage;
 		node.next=NULLPTR;
-		SetNode(&node,newnodeptr);
+		//SetNode(&node,newnodeptr);
+
+		// MUCH BAD STUFF HAPPENING. Unrolling code	below.....
+		
+ /* Write node to slot i in the serial ram */
+ //void SetNode(DISPLAYNODE *node, NODEPTR i)
+ //{
+	uint32_t i;
+	uint32_t j;
+	i=newnodeptr;
+	i=i*sizeof(DISPLAYNODE)+PAGEARRAYSIZE;	// Find the actual serial ram address
+	SetSPIRamAddress(SPIRAM_WRITE, i); // Write this node
+	// WriteSPIRam((char*)&node, sizeof(DISPLAYNODE)); // Assuming data is in same order as declaration with no byte alignment padding
+	
+	
+//void WriteSPIRam(char *buffer, int length)
+//{
+//	unsigned int i;
+	int length;
+	length=sizeof(DISPLAYNODE);
+	xprintf(PSTR("Sending %d bytes to %d\n\r"),length,i);
+	char *s;
+	s=(char *)(&node);
+	for(i=0;i<length;i++)
+	{
+		// SPI_MasterTransceiveByte(&spiMasterSRAM,(char*)(&node+i)); // Send the bytes
+		
+		
+//uint8_t SPI_MasterTransceiveByte(SPI_Master_t *spi, uint8_t TXdata)
+//{
+	
+	// uint32_t i=1;
+	j=1;
+	SPI_Master_t *spi;
+	spi=&spiMasterSRAM;
+	/* Send pattern. */
+	ch=*s++;
+	xprintf(PSTR("[SetNode] Sending character=%02X\n\r"),ch);
+	spi->module->DATA = ch;
+
+	/* Wait for transmission complete. */
+	while(!(spi->module->STATUS & SPI_IF_bm) && j<100000) {
+		j++;
+	}
+	if (j>=100000)
+		xprintf(PSTR("[SetNode] TX timed out\n\r"));
+	/* Read received data. */
+	uint8_t result = spi->module->DATA;
+
+	// return(result);
+//}		
+		
+		
+	}
+// }
+	
+	
+	
+	DeselectSPIRam();
+	
+ //} // SetNode		
+		
 	}
 	else
 		xprintf(PSTR("[LinkPage] Sorry, carousels are NOT implemented"));
@@ -257,6 +319,7 @@
 	
 	char line[MAXLINE];
 	char *str;
+
 	
 	// Open the drive and navigate to the correct location
 	res=(WORD)disk_initialize(drive);	// di0
@@ -280,6 +343,9 @@
 		f_close(&pagefileFIL);
 		return;
 	}
+
+	spiram_init();
+	SetSPIRamStatus(SPIRAM_MODE_SEQUENTIAL);
 
 	// For all of the pages in our index...
 	for (ix=0;!f_eof(&listFIL);ix++)
@@ -307,12 +373,18 @@
 	f_close(&pagefileFIL);
  } // ScanPageList
  
+ // We never transfer more than 5 bytes at a time
+ static SPI_DataPacket_t dl_spi;
+ static uint8_t dl_txData[6];
+ static uint8_t dl_rxData[6];
+ 
  /** Set up all the lists.
   * Scan all the existing pages and make a sorted list
   */
  void InitDisplayList(void)
  {
- 	// Initialise the serial RAM
+	// Initialise the serial RAM
+	SPI_MasterCreateDataPacket(&dl_spi,dl_txData,dl_rxData,sizeof(DISPLAYNODE),
 	spiram_init();
 	SetSPIRamStatus(SPIRAM_MODE_SEQUENTIAL);
 	
