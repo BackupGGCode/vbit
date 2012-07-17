@@ -69,6 +69,9 @@ int OptRelays;			/** Holds the current state of the opt out relay signals */
 unsigned char OptOutMode=0;	// Which ATP950 mode. If 0, then do nothing
 unsigned char OptOutType=OPTOUT_START;	// One of the OPTOUT values
 
+// These are global file objects
+FIL pagefileFIL, listFIL;
+
 /** Check that parity is correct for the packet payload
  * The parity is set to odd for all bytes from offset to the end
  * Offset should be at least 3, as the first three bytes have even parity
@@ -321,7 +324,7 @@ static void copyFL(char *packet, char *textline, PAGE *page)
 static unsigned char insert(char *packet, uint8_t field)
 {
 	unsigned char noCarousel=0; // Use to only display the first page of a carousel. TODO. Implement carousels
-	static FIL pagefile, list;
+	// static FIL pagefile, list;
 	static uint8_t savefield;
 	static DWORD fileptr;		// Used to save the file pointer to the body of the ttx file
 	static PAGE page;
@@ -345,14 +348,14 @@ static unsigned char insert(char *packet, uint8_t field)
 		res=(WORD)disk_initialize(drive);	// di0
 		put_rc(f_mount(drive, &Fatfs[drive]));	// fi0
 		put_rc(f_chdir("onair"));
-		res=f_open(&list,"mag1.lst",FA_READ);	
+		res=f_open(&listFIL,"mag1.lst",FA_READ);	
 		if (res)
 		{
 			xprintf(PSTR("[insert]Epic Fail 1\n"));			
 			put_rc(res);
 			return 1;
 		}	
-		f_gets(listentry,sizeof(listentry),&list);		
+		f_gets(listentry,sizeof(listentry),&listFIL);		
 		str=strchr(listentry,',');
 		if (str)
 		{
@@ -372,7 +375,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		}
 		xprintf(PSTR("\n\rf=%s\n\r"),pagename);		
 		state[mag]=STATE_IDLE;
-		res=f_open(&pagefile,"pages.all",FA_READ);		// Only need to open this once!
+		res=f_open(&pagefileFIL,"pages.all",FA_READ);		// Only need to open this once!
 		// xputs(PSTR("STATE_BEGIN\n\n\r"));
 		if (res)
 			xprintf(PSTR("Failed to open pages.all, res=%d\n\n"),res); 
@@ -384,7 +387,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		// Need to do the whole parse and parity bit here 
 		// open pagefile
 		LED_On( LED_1 );		// LED5 - high while seeking a folder
-		res=f_lseek(&pagefile,pageptr); // Instead of f_open just use lseek
+		res=f_lseek(&pagefileFIL,pageptr); // Instead of f_open just use lseek
 		LED_Off( LED_1 ); // Need to define the correct LED
 		if (res)
 		{
@@ -394,13 +397,13 @@ static unsigned char insert(char *packet, uint8_t field)
 		}	
 		ClearPage(&page); // Clear the page parameters (not strictly required)
 		// Loop through the header and parse down to the OL
-		while (pagefile.fptr<(pageptr+pagesize))
+		while (pagefileFIL.fptr<(pageptr+pagesize))
 		{
-			fileptr=pagefile.fptr;		// Save the file pointer in case we found "OL"
-			f_gets(data,sizeof(data),&pagefile);
+			fileptr=pagefileFIL.fptr;		// Save the file pointer in case we found "OL"
+			f_gets(data,sizeof(data),&pagefileFIL);
 			if (data[0]=='O' && data[1]=='L')
 			{
-				f_lseek (&pagefile, fileptr);	// Step back to the OL line
+				f_lseek (&pagefileFIL, fileptr);	// Step back to the OL line
 				break;
 			}
 			if (ParseLine(&page, data))
@@ -424,14 +427,14 @@ static unsigned char insert(char *packet, uint8_t field)
 		}
 		state[mag]=STATE_SENDING; // We have the new field. Change state
 	case STATE_SENDING:
-		if (f_eof(&pagefile) || noCarousel || (pagefile.fptr>=(pageptr+pagesize))) // Page done?
+		if (f_eof(&pagefileFIL) || noCarousel || (pagefileFIL.fptr>=(pageptr+pagesize))) // Page done?
 		{
-			if (f_eof(&list)) // List All done? Start again at the top of the list
+			if (f_eof(&listFIL)) // List All done? Start again at the top of the list
 			{
 				// f_close(&pagefile);
-				f_lseek (&list, 0);
+				f_lseek (&listFIL, 0);
 			}
-			f_gets(listentry,sizeof(listentry),&list);
+			f_gets(listentry,sizeof(listentry),&listFIL);
 			str=strchr(listentry,',');
 			if (str)
 			{
@@ -455,7 +458,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		else
 		{
 			// Get the next line
-			str=f_gets(data,sizeof(data),&pagefile);
+			str=f_gets(data,sizeof(data),&pagefileFIL);
 			if (str)
 			{
 				// Now we need to parse the line and send it to the packet

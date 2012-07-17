@@ -81,17 +81,43 @@
  static NODEPTR sFreeList; // FreeList is an index to the DisplayList. It points to the first free node.
  static NODEPTR sDisplayList; // Root of the display list
  
- /* Write node to slot i in the serial ram */
- void SetNode(DISPLAYNODE node, NODEPTR i)
+ /* GetNodePtr and SetNodePtr get NODEPTR values from PageArray */
+ /** Write nodeptr to slot addr
+  *  \param addr - Address in serial ram
+  *  \param nodeptr - Value to set
+  */
+ void SetNodePtr(NODEPTR nodeptr, uint16_t addr)
  {
-	i=i*sizeof(DISPLAYNODE);	// Find the actual serial ram address
+	// xprintf(PSTR("[SetNodePtr]Writing node pointer to %d \n\r "),addr);
+	SetSPIRamAddress(SPIRAM_WRITE, addr); // Set the address
+	WriteSPIRam((char*)&nodeptr, sizeof(NODEPTR)); // Write data
+	DeselectSPIRam();	// let go
+ } // SetNodePtr
+ 
+ /* Fetch a node from the PageArray in serial ram
+  */ 
+ NODEPTR GetNodePtr(uint16_t *addr)
+ {
+	NODEPTR nodeptr;
+	xprintf(PSTR("[GetNodePtr]Reading node pointer (%d bytes) from %d \n\r "),sizeof(NODEPTR),*addr);
+	SetSPIRamAddress(SPIRAM_READ, *addr); // Set the address
+	ReadSPIRam((char *)&nodeptr, sizeof(NODEPTR)); // Read data
+	DeselectSPIRam();
+	xprintf(PSTR("[GetNodePtr] returns nodeptr=%d\n\r"),nodeptr);
+	return nodeptr;
+ } // GetNodePtr
+ 
+ /* Write node to slot i in the serial ram */
+ void SetNode(DISPLAYNODE *node, NODEPTR i)
+ {
+	i=i*sizeof(DISPLAYNODE)+PAGEARRAYSIZE;	// Find the actual serial ram address
 	// TODO MAYBE. Check that i is less than MAXSRAM
 	// put out all the values
 	SetSPIRamAddress(SPIRAM_WRITE, i); // Write this node
-	WriteSPIRam((char*)&node, sizeof(DISPLAYNODE)); // Assuming data is in same order as declaration with no byte alignment padding
+	WriteSPIRam((char*)node, sizeof(DISPLAYNODE)); // Assuming data is in same order as declaration with no byte alignment padding
 	DeselectSPIRam();
-	//if (node.subpage==FREENODE)
-	//	xprintf(PSTR("Ouch! SetNode just stored a FREENODE\n\r"));
+	if (node->subpage!=FREENODE)
+		xprintf(PSTR("[SetNode] addr=%d\n\r"),i);
 	
  } // SetNode
  
@@ -101,12 +127,10 @@
  DISPLAYNODE GetNode(NODEPTR i)
  {
 	DISPLAYNODE node;
-	i=i*sizeof(DISPLAYNODE);	// Find the actual serial ram address
+	i=i*sizeof(DISPLAYNODE)+PAGEARRAYSIZE;	// Find the actual serial ram address
 	SetSPIRamAddress(SPIRAM_READ, i); // Write this node
 	ReadSPIRam((char *)&node, sizeof(DISPLAYNODE));
 	DeselectSPIRam();
-	if (node.subpage==FREENODE)
-		xprintf(PSTR("[GetNode]Ouch! Just got a FREENODE %d\n\r"),i/sizeof(DISPLAYNODE));
 	return node;
  } // GetNode
  
@@ -140,7 +164,7 @@
 	}
 	else
 		sFreeList=node.next;
-	xprintf(PSTR("[NewNode] Returns %d\n\r"),ix);
+	xprintf(PSTR("[NewNode] Returns %d, Freelist=%d\n\r"),ix,sFreeList);
 	return ix;
  } // NewNode
 
@@ -156,7 +180,7 @@
  	node.pageindex=0;
 	node.subpage=FREENODE;
 	node.next=sFreeList; // This node points to the rest of the list
-	SetNode(node,i);	// TODO: Check that i is in range
+	SetNode(&node,i);	// TODO: Check that i is in range
 	sFreeList=i;		// And the free list now points to this node
  } // ReturnToFreeList
  
@@ -174,21 +198,45 @@
 	node.pageindex=0;
 	node.next=0;
 	node.subpage=NULLNODE;
-	SetNode(node,0);
+	SetNode(&node,0);
 	for (i=MAXNODES-1;i>=0;i--)
 	{
 		ReturnToFreeList(i);
 	}
 	// The FreeList is now ready
+	// But we now have to clear out the PageArray
+	for (i=0;i<PAGEARRAYSIZE;i+=sizeof(NODEPTR))
+		SetNodePtr(NULLPTR, i);			
  } // MakeFreeList
  
- /** Insert a page into the list
-  * \param np - Pointer to the mag root node
-  * \param node - node to insert
+ /** Insert a page into the display list
+  * \param page - pointer to a page structure.
   * \return Might be useful to return something 
   */
- void LinkPage(NODEPTR np,DISPLAYNODE newnode)
+ void LinkPage(uint8_t mag, uint8_t page, uint8_t subpage, uint16_t ix)
  {
+	NODEPTR np, newnodeptr;
+	uint16_t cellAddress;
+	DISPLAYNODE node;
+	// What is the address of this page?
+	cellAddress=(mag*0x100+page)*sizeof(NODEPTR);
+	xprintf(PSTR("[LinkPage] Enters page ix=%d cell=%d\n\r"),ix,cellAddress);
+	np=GetNodePtr(&cellAddress);
+	// Is the cell empty?
+
+	if (np==NULLPTR)
+	{
+		// Yes!
+		newnodeptr=NewNode(); // Make a new node
+		SetNodePtr(newnodeptr,cellAddress); // Pop it into the PageArray
+		node.pageindex=ix;			// Construct the node
+		node.subpage=subpage;
+		node.next=NULLPTR;
+		SetNode(&node,newnodeptr);
+	}
+	else
+		xprintf(PSTR("[LinkPage] Sorry, carousels are NOT implemented"));
+	xprintf(PSTR("[LinkPage] Exits\n\r"));
  } // LinkPage
  
  /** This takes the page.idx list and makes a sorted display list out of it
@@ -196,28 +244,26 @@
   */
  void ScanPageList(void)
  {
-	FIL PageIndex;		// page.idx
-	FIL PageAll;	// page.all	
+	//FIL PageIndex;		// page.idx. now listFIL
+	//FIL PageAll;	// page.all. now pagefileFIL	
 	BYTE drive=0;
 	FRESULT res;	
 	PAGEINDEXRECORD ixRec;
 	UINT charcount;	
 	PAGE page;
-	uint8_t ix;
+	PAGE *p=&page;
+	uint16_t ix;
 	const unsigned char MAXLINE=80;
 	
 	char line[MAXLINE];
 	char *str;
-	
-	NODEPTR root;
-	DISPLAYNODE node;
 	
 	// Open the drive and navigate to the correct location
 	res=(WORD)disk_initialize(drive);	// di0
 	put_rc(f_mount(drive, &Fatfs[drive]));	// fi0
 	put_rc(f_chdir("onair"));	
 	
-	res=f_open(&PageIndex,"pages.idx",FA_READ);
+	res=f_open(&listFIL,"pages.idx",FA_READ);
 	if (res)
 	{
 		xprintf(PSTR("[displaylist]Epic Fail. Can not open pages.idx\n"));			
@@ -226,44 +272,39 @@
 		return;
 	}
 	
-	res=f_open(&PageAll,"pages.all",FA_READ);
+	res=f_open(&pagefileFIL,"pages.all",FA_READ);
 	if (res)
 	{
 		xprintf(PSTR("[displaylist]Epic Fail. Can not open page.all\n"));			
 		put_rc(res);
-		f_close(&PageAll);
+		f_close(&pagefileFIL);
 		return;
 	}
 
 	// For all of the pages in our index...
-	for (ix=0;!f_eof(&PageIndex);ix++)
+	for (ix=0;!f_eof(&listFIL);ix++)
 	{
-		f_read(&PageIndex,&ixRec,sizeof(ixRec),&charcount);
+		f_read(&listFIL,&ixRec,sizeof(ixRec),&charcount);
 		xprintf(PSTR("seek %ld size %d \n\r"),ixRec.seekptr,ixRec.pagesize);
 		// TODO: Use seekptr on page.all and parse the page
-		f_lseek(&PageAll,ixRec.seekptr);	// and set the pointer back to the start
+		f_lseek(&pagefileFIL,ixRec.seekptr);	// and set the pointer back to the start
 		// TODO: Extract the M PP SS fields
-		page.mag=9;
-		while (page.mag==9) // TODO: Prevent this from going badly wrong!!!
+		p->mag=9;
+		while (p->mag==9) // TODO: Prevent this from going badly wrong!!!
 		{
-			str=f_gets(line,MAXLINE,&PageAll);		
-			ParseLine(&page,str);
+			str=f_gets(line,MAXLINE,&pagefileFIL);		
+			xprintf(PSTR("parsing %s\n\r"),str);
+			ParseLine(p,str);
 			//TODO: Check that we didn't read past the end of this page
 		}
-		xprintf(PSTR("M PP SS %1d %02X %02d\n\r"),page.mag,page.page,page.subpage);
+		xprintf(PSTR("M PP SS %1d %02X %02d\n\r"),p->mag,p->page,p->subpage);
 		// TODO: Find or create the root of the mag M 
 		// Something like 
-		node.pageindex=ix;
-		node.subpage=page.subpage;
-		node.next=NULLPTR;
-		LinkPage(root,node);
-		// Scan the mag to find the PP, else create PP
-		// If page already exists and has a different subcode...
-		// then convert to a junction node and make carousel list.
-		// If Junction node already exists, insert the new page at the correct sorted position.
+		LinkPage(p->mag,p->page,p->subpage,ix);
+		xprintf(PSTR("next iteration\n\r"));
 	}
-	f_close(&PageIndex);
-	f_close(&PageAll);
+	f_close(&listFIL);
+	f_close(&pagefileFIL);
  } // ScanPageList
  
  /** Set up all the lists.

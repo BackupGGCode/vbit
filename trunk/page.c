@@ -49,7 +49,7 @@ unsigned char ParseLine(PAGE *page, char *str)
 {
 	int32_t n;
 	char *ptr;
-	// xprintf(PSTR("%s\n"),str);
+	xprintf(PSTR("%s\n"),str);
 	if (str[2]!=',')
 	{
 		xprintf(PSTR("[Parse page]Bad format\n"));
@@ -82,7 +82,7 @@ unsigned char ParseLine(PAGE *page, char *str)
 				xprintf(PSTR("error in line %s\n"),str);
 				return 1;
 			}
-			// xprintf(PSTR("[ParseLine]PN mag=%d page=%X, subpage=%X\n"),page->mag,page->page,page->subpage);
+			xprintf(PSTR("[ParseLine]PN mag=%d page=%X, subpage=%X\n"),page->mag,page->page,page->subpage);
 		}
 		else
 		if (str[1]=='S')

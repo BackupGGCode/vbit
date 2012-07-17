@@ -114,7 +114,7 @@ ASRC = ../SDCard/xitoa.S
 # Optimization level, can be [0, 1, 2, 3, s].
 #     0 = turn off optimization. s = optimize for size.
 #     (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
-OPT = 1
+OPT = 2
 
 
 # Debugging format.

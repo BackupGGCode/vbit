@@ -27,6 +27,7 @@
 
 #include "xitoa.h"
 #include "..\Serial_RAM\Serial_RAM_Demo.h"
+#include "packet.h"
 
 // What is the size of the serial ram? (32kBytes)
 #define MAXSRAM (0x8000) 
@@ -96,11 +97,20 @@ The maximum number of nodes that can fit in the PageList are:
 #define PAGEARRAYSIZE (8 * 256 * sizeof (NODEPTR))
 #define MAXNODES ((MAXSRAM - PAGEARRAYSIZE)/sizeof(DISPLAYNODE))
 
+/*
+// How to find a value?
+A cell is accessed by this formula:
+cell address = (mag*0x100+page)*sizeof(NODEPTR);
 
+A node number is in the range 0..MAXNODES
+node address = (node * sizeof(node)) + PAGEARRAYSIZE
+*/
 
 /** clear out the whole display list
 */
 void InitDisplayList(void);
+// ??void AddPage(??,??);
+// uint8_t DeleteRange(char *range);
 
 
 
