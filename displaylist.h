@@ -42,10 +42,8 @@ typedef struct
 } PAGEINDEXRECORD;
 
 /** defines a display list node. However...
- * Root: pageindex actually points to a display list for the mag.
- *       Next points to the next Root node OR NULLPTR
- *       Page actually holds the Mag 0..7 (where 0=page 8)
- *       Subpage is set to ROOTNODE.
+ * This is only used to sort subpages.
+ * The actual mag and page are in PageArray
  */
 typedef struct
 {

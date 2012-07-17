@@ -475,15 +475,16 @@ int RunVBIT(void)
 	BUTTON_Init( BUTTON_ALL );
 	xputs(PSTR("VBIT620 Inserter 0.02 Started\nKings Road Applications\n"));
 	GPIO_Init();	// Set up the ports
-	// Configure the spiram port and set the spiram to sequential mode
-	spiram_initialise();
-	SetSerialRamStatus(SPIRAM_MODE_SEQUENTIAL);	
 	if (disk_initialize(0)==FR_OK) // Set up the SD memory card
 		statusDisk=0;
 	else statusDisk=1;
-	statusI2C=i2c_init();			// Start the video processors
 	f_mount(0,&Fatfs[0]);
 	InitDisplayList();				// Do this before we start interrupts!!!
+
+	// Configure VBIT's spiram port and set the spiram to sequential mode
+	spiram_initialise();
+	SetSerialRamStatus(SPIRAM_MODE_SEQUENTIAL);	
+	statusI2C=i2c_init();			// Start the video processors
 	statusVBI=InitVBI();			// Set up the video timing
 	LoadINISettings();
 	InitDataBroadcast();
