@@ -482,9 +482,9 @@ int RunVBIT(void)
 		statusDisk=0;
 	else statusDisk=1;
 	statusI2C=i2c_init();			// Start the video processors
-	statusVBI=InitVBI();			// Set up the video timing
 	f_mount(0,&Fatfs[0]);
-	InitDisplayList();
+	InitDisplayList();				// Do this before we start interrupts!!!
+	statusVBI=InitVBI();			// Set up the video timing
 	LoadINISettings();
 	InitDataBroadcast();
 	for (;;)

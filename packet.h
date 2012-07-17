@@ -113,6 +113,11 @@ extern char g_Header[26];
 extern void put_rc (FRESULT rc);
 extern FATFS Fatfs[1];
 
+// Why are these shared?
+// Because they are so huge we can't afford not to.
+// These also get accessed during startup
+extern FIL pagefileFIL, listFIL;
+
 extern int OptRelays;			/* Holds the current state of the opt out relay signals */
 
 extern unsigned char OptOutMode;	// Which ATP950 mode
