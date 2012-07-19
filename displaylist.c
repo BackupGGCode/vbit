@@ -88,7 +88,7 @@
   */
  void SetNodePtr(NODEPTR nodeptr, uint16_t addr)
  {
-	// xprintf(PSTR("[SetNodePtr]Writing node pointer to %d \n\r "),addr);
+	xprintf(PSTR("[SetNodePtr]Writing node pointer to %d \n\r "),addr);
 	SetSPIRamAddress(SPIRAM_WRITE, addr); // Set the address
 	WriteSPIRam((char*)&nodeptr, sizeof(NODEPTR)); // Write data
 	DeselectSPIRam();	// let go
@@ -110,34 +110,34 @@
  /* Write node to slot i in the serial ram */
  void SetNode(DISPLAYNODE *node, NODEPTR i)
  {
+	uint8_t subpage;
+	subpage=node->subpage;
 	i=i*sizeof(DISPLAYNODE)+PAGEARRAYSIZE;	// Find the actual serial ram address
 	// TODO MAYBE. Check that i is less than MAXSRAM
 	// put out all the values
 	SetSPIRamAddress(SPIRAM_WRITE, i); // Write this node
 	WriteSPIRam((char*)node, sizeof(DISPLAYNODE)); // Assuming data is in same order as declaration with no byte alignment padding
 	DeselectSPIRam();
-	if (node->subpage!=FREENODE)
-		xprintf(PSTR("[SetNode] addr=%d\n\r"),i);
+	if (subpage!=FREENODE)
+		xprintf(PSTR("[SetNode] addr=%d subpage=%d\n\r"),i,subpage);
 	
  } // SetNode
  
  /* Fetch a node from the slot in serial ram
   * Would this be better being passed by reference?
   */ 
- DISPLAYNODE GetNode(NODEPTR i)
+ void GetNode(DISPLAYNODE *node,NODEPTR i)
  {
-	DISPLAYNODE node;
 	i=i*sizeof(DISPLAYNODE)+PAGEARRAYSIZE;	// Find the actual serial ram address
 	SetSPIRamAddress(SPIRAM_READ, i); // Write this node
-	ReadSPIRam((char *)&node, sizeof(DISPLAYNODE));
+	ReadSPIRam((char *)node, sizeof(DISPLAYNODE));
 	DeselectSPIRam();
-	return node;
  } // GetNode
  
  void DumpNode(NODEPTR np)
  {
 	DISPLAYNODE n;
-	n=GetNode(np);
+	GetNode(&n,np);
 	xprintf(PSTR("Node (%d) pageindex=%d next=%d subpage=%d\n\r"),np,n.pageindex,n.next,n.subpage);
  } // DumpNode
  
@@ -155,7 +155,8 @@
  NODEPTR NewNode(void)
  {
 	NODEPTR ix=sFreeList;	// The first node in the free list is what we are going to grab
-	DISPLAYNODE node=GetNode(sFreeList); // So we need to update the FreeList pointer
+	DISPLAYNODE node;
+	GetNode(&node,sFreeList); // So we need to update the FreeList pointer
 	// TODO: Check that we didn't empty the free list
 	if (node.subpage==NULLNODE)
 	{
@@ -201,12 +202,16 @@
 	SetNode(&node,0);
 	for (i=MAXNODES-1;i>=0;i--)
 	{
+		if (i%100==0) xprintf(PSTR("M"));
 		ReturnToFreeList(i);
 	}
+xprintf(PSTR("\n\r"));		
 	// The FreeList is now ready
 	// But we now have to clear out the PageArray
 	for (i=0;i<PAGEARRAYSIZE;i+=sizeof(NODEPTR))
-		SetNodePtr(NULLPTR, i);			
+		if (i%100==0) xprintf(PSTR("P"));
+		SetNodePtr(NULLPTR, i);		
+xprintf(PSTR("\n\r"));		
  } // MakeFreeList
  
  /** Insert a page into the display list
@@ -217,10 +222,9 @@
  {
 	NODEPTR np, newnodeptr;
 	uint16_t cellAddress;
-	char ch;
 	DISPLAYNODE node;
 	// What is the address of this page?
-	cellAddress=(mag*0x100+page)*sizeof(NODEPTR);
+	cellAddress=((mag<<8)+page)*sizeof(NODEPTR);
 	xprintf(PSTR("[LinkPage] Enters page ix=%d cell=%d\n\r"),ix,cellAddress);
 	np=GetNodePtr(&cellAddress);
 	// Is the cell empty?
@@ -236,7 +240,7 @@
 		SetNode(&node,newnodeptr);		
 	}
 	else
-		xprintf(PSTR("[LinkPage] Sorry, carousels are NOT implemented"));
+		xprintf(PSTR("[LinkPage] Sorry, carousels are NOT implemented (np=%d)\n\r"),np);
 	xprintf(PSTR("[LinkPage] Exits\n\r"));
  } // LinkPage
  
@@ -317,7 +321,7 @@
   */
  void InitDisplayList(void)
  {
-
+	xprintf(PSTR("[InitDisplayList] Started\n\r"));
 	spiram_init();
 	SetSPIRamStatus(SPIRAM_MODE_SEQUENTIAL);
 	
@@ -328,6 +332,7 @@
 	Dump();
 	// Now scan the pages list and make a sorted list, creating nodes for Root, Node and Junction
 	ScanPageList();
+	xprintf(PSTR("[InitDisplayList] Exits\n\r"));
  } // initDisplayList
  
  
