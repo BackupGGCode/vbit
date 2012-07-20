@@ -88,7 +88,7 @@
   */
  void SetNodePtr(NODEPTR nodeptr, uint16_t addr)
  {
-	xprintf(PSTR("[SetNodePtr]Writing node pointer to %d \n\r "),addr);
+	xprintf(PSTR("[SetNodePtr]Writing node pointer %04X to addr %d \n\r "),nodeptr,addr);
 	SetSPIRamAddress(SPIRAM_WRITE, addr); // Set the address
 	WriteSPIRam((char*)&nodeptr, sizeof(NODEPTR)); // Write data
 	DeselectSPIRam();	// let go
@@ -99,7 +99,7 @@
  NODEPTR GetNodePtr(uint16_t *addr)
  {
 	NODEPTR nodeptr;
-	xprintf(PSTR("[GetNodePtr]Reading node pointer (%d bytes) from %d \n\r "),sizeof(NODEPTR),*addr);
+	xprintf(PSTR("[GetNodePtr]Reading node pointer (%d bytes) from %d \n\r "),sizeof(NODEPTR),addr);
 	SetSPIRamAddress(SPIRAM_READ, *addr); // Set the address
 	ReadSPIRam((char *)&nodeptr, sizeof(NODEPTR)); // Read data
 	DeselectSPIRam();
@@ -140,6 +140,7 @@
 	GetNode(&n,np);
 	xprintf(PSTR("Node (%d) pageindex=%d next=%d subpage=%d\n\r"),np,n.pageindex,n.next,n.subpage);
  } // DumpNode
+
  
  static void Dump(void)
  {
@@ -147,6 +148,8 @@
 		xprintf(PSTR("[Dump] ... \n\r"));	
 	for (i=0;i<10;i++)
 		DumpNode(i);
+	for (i=0;i<20;i+=2)
+		xprintf(PSTR("nodeptr[%d]=%d\n\r"),i,GetNodePtr(&i));
  }
  
  /** Grab a node from the free list
@@ -209,8 +212,11 @@ xprintf(PSTR("\n\r"));
 	// The FreeList is now ready
 	// But we now have to clear out the PageArray
 	for (i=0;i<PAGEARRAYSIZE;i+=sizeof(NODEPTR))
-		if (i%100==0) xprintf(PSTR("P"));
+	{
+		if (i%100==0)
+			xprintf(PSTR("P"));
 		SetNodePtr(NULLPTR, i);		
+	}
 xprintf(PSTR("\n\r"));		
  } // MakeFreeList
  
