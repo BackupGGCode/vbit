@@ -94,6 +94,7 @@ SRC = $(TARGET).c				\
     ../vbit/sdfilemanager.c             \
     ../vbit/page.c             \
     ../vbit/crca.c             \
+    ../vbit/magstream.c             \
 	../vbit/Lib/RingBuff.c		\
 	../minini/minIni.c			
 #	../Audio/Audio_Demo.c
