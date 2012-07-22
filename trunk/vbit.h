@@ -52,6 +52,7 @@
 #include "vbi.h"
 #include "databroadcast.h"
 #include "displaylist.h"
+#include "magstream.h"
 		
 #include "../../Common/Terminal/TerminalDriver.h"
 #include "../../Common/Terminal/TerminalEvents.h"	

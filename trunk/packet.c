@@ -344,7 +344,7 @@ static unsigned char insert(char *packet, uint8_t field)
 	{
 	case STATE_BEGIN: // Open the first page and drop through to idle
 		// xputs(PSTR("B"));
-	
+		GetPage(&pageptr,&pagesize,0x8f);	// TODO: A proper mask
 		res=(WORD)disk_initialize(drive);	// di0
 		put_rc(f_mount(drive, &Fatfs[drive]));	// fi0
 		put_rc(f_chdir("onair"));

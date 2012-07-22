@@ -88,7 +88,7 @@
   */
  void SetNodePtr(NODEPTR nodeptr, uint16_t addr)
  {
-	xprintf(PSTR("[SetNodePtr]Writing node pointer %04X to addr %d \n\r "),nodeptr,addr);
+	// xprintf(PSTR("[SetNodePtr]Writing node pointer %04X to addr %d \n\r "),nodeptr,addr);
 	SetSPIRamAddress(SPIRAM_WRITE, addr); // Set the address
 	WriteSPIRam((char*)&nodeptr, sizeof(NODEPTR)); // Write data
 	DeselectSPIRam();	// let go
@@ -99,11 +99,11 @@
  NODEPTR GetNodePtr(uint16_t *addr)
  {
 	NODEPTR nodeptr;
-	xprintf(PSTR("[GetNodePtr]Reading node pointer (%d bytes) from %d \n\r "),sizeof(NODEPTR),addr);
+	// xprintf(PSTR("[GetNodePtr]Reading node pointer (%d bytes) from %d \n\r "),sizeof(NODEPTR),addr);
 	SetSPIRamAddress(SPIRAM_READ, *addr); // Set the address
 	ReadSPIRam((char *)&nodeptr, sizeof(NODEPTR)); // Read data
 	DeselectSPIRam();
-	xprintf(PSTR("[GetNodePtr] returns nodeptr=%d\n\r"),nodeptr);
+	// xprintf(PSTR("[GetNodePtr] returns nodeptr=%d\n\r"),nodeptr);
 	return nodeptr;
  } // GetNodePtr
  
@@ -118,8 +118,8 @@
 	SetSPIRamAddress(SPIRAM_WRITE, i); // Write this node
 	WriteSPIRam((char*)node, sizeof(DISPLAYNODE)); // Assuming data is in same order as declaration with no byte alignment padding
 	DeselectSPIRam();
-	if (subpage!=FREENODE)
-		xprintf(PSTR("[SetNode] addr=%d subpage=%d\n\r"),i,subpage);
+	//if (subpage!=FREENODE)
+	//	xprintf(PSTR("[SetNode] addr=%d subpage=%d\n\r"),i,subpage);
 	
  } // SetNode
  
@@ -168,7 +168,7 @@
 	}
 	else
 		sFreeList=node.next;
-	xprintf(PSTR("[NewNode] Returns %d, Freelist=%d\n\r"),ix,sFreeList);
+	// xprintf(PSTR("[NewNode] Returns %d, Freelist=%d\n\r"),ix,sFreeList);
 	return ix;
  } // NewNode
 
@@ -229,9 +229,9 @@ xprintf(PSTR("\n\r"));
 	NODEPTR np, newnodeptr;
 	uint16_t cellAddress;
 	DISPLAYNODE node;
-	// What is the address of this page?
-	cellAddress=((mag<<8)+page)*sizeof(NODEPTR);
-	xprintf(PSTR("[LinkPage] Enters page ix=%d cell=%d\n\r"),ix,cellAddress);
+	// What is the address of this page? (note that mag 8 is 0 in this index calculation)
+	cellAddress=(((mag & 0x07)<<8)+page)*sizeof(NODEPTR);
+	// xprintf(PSTR("[LinkPage] Enters page ix=%d cell=%d\n\r"),ix,cellAddress);
 	np=GetNodePtr(&cellAddress);
 	// Is the cell empty?
 
@@ -247,7 +247,7 @@ xprintf(PSTR("\n\r"));
 	}
 	else
 		xprintf(PSTR("[LinkPage] Sorry, carousels are NOT implemented (np=%d)\n\r"),np);
-	xprintf(PSTR("[LinkPage] Exits\n\r"));
+	// xprintf(PSTR("[LinkPage] Exits\n\r"));
  } // LinkPage
  
  /** This takes the page.idx list and makes a sorted display list out of it
@@ -300,7 +300,7 @@ xprintf(PSTR("\n\r"));
 	for (ix=0;!f_eof(&listFIL);ix++)
 	{
 		f_read(&listFIL,&ixRec,sizeof(ixRec),&charcount);
-		xprintf(PSTR("seek %ld size %d \n\r"),ixRec.seekptr,ixRec.pagesize);
+		// xprintf(PSTR("seek %ld size %d \n\r"),ixRec.seekptr,ixRec.pagesize);
 		// TODO: Use seekptr on page.all and parse the page
 		f_lseek(&pagefileFIL,ixRec.seekptr);	// and set the pointer back to the start
 		// TODO: Extract the M PP SS fields
@@ -308,7 +308,7 @@ xprintf(PSTR("\n\r"));
 		while (p->mag==9) // TODO: Prevent this from going badly wrong!!!
 		{
 			str=f_gets(line,MAXLINE,&pagefileFIL);		
-			xprintf(PSTR("parsing %s\n\r"),str);
+			// xprintf(PSTR("parsing %s\n\r"),str);
 			ParseLine(p,str);
 			//TODO: Check that we didn't read past the end of this page
 		}
@@ -316,7 +316,7 @@ xprintf(PSTR("\n\r"));
 		// TODO: Find or create the root of the mag M 
 		// Something like 
 		LinkPage(p->mag,p->page,p->subpage,ix);
-		xprintf(PSTR("next iteration\n\r"));
+		// xprintf(PSTR("next iteration\n\r"));
 	}
 	f_close(&listFIL);
 	f_close(&pagefileFIL);

@@ -142,6 +142,15 @@ static void get_line (char *buff, int len)
 	USB_Serial_Send('\n');
 }
 
+uint8_t test3(void)
+{
+	uint8_t i;
+	xprintf(PSTR("Magazine streaming test\n\r"));
+	for (i=0;i<64;i++)
+		GetNextPage(0x8f);
+	xprintf(PSTR("\n\r"));
+}
+
 /* SPI ram test */
 uint8_t test2(void)
 {
@@ -260,7 +269,8 @@ static int vbit_command(char *Line)
 		break;		
 	case 'T': // TEST
 		// testIni();
-		test2();
+		test3();
+		// test2();
 		strcpy_P(str,PSTR("OK\n"));
 		break;
 	case 'U': // TEST
@@ -479,6 +489,7 @@ int RunVBIT(void)
 		statusDisk=0;
 	else statusDisk=1;
 	f_mount(0,&Fatfs[0]);
+	InitStream();
 	InitDisplayList();				// Do this before we start interrupts!!!
 
 	// Configure VBIT's spiram port and set the spiram to sequential mode
