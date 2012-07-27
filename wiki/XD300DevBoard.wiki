@@ -3,7 +3,7 @@
 Note Justin called the XD300 board the XD200 Revision B. Neither board is available. Instead use the MT-X1.
 = XD200 XMEGA Development Board=
 
-You might be wondering about why I'm using the X2300. As a development board it has a lot of sensible features. All of the I/O is brought out on pin arrays that are easy to find and fit. It has a separate USB chip so the main processor is not burdened with the traffic. The main processor is programmed by the USB chip so there are no restrictions on things like clocks or fuses. Having an SD card really makes things easy when it comes to page storage. It also comes loaded with a handy USB bridge so you don't have to write one. And it is all based on the GCC AVR tool chain so nothing more to pay.
+You might be wondering about why I'm using the XD300. As a development board it has a lot of sensible features. All of the I/O is brought out on pin arrays that are easy to find and fit. It has a separate USB chip so the main processor is not burdened with the traffic. The main processor is programmed by the USB chip so there are no restrictions on things like clocks or fuses. Having an SD card really makes things easy when it comes to page storage. It also comes loaded with a handy USB bridge so you don't have to write one. And it is all based on the GCC AVR tool chain so nothing more to pay.
 
 As for the XMEGA itself it has much more sophisticated ports than the standard AVRs. It also has a lot of timers which a teletext project seems to need a lot of.
 
