@@ -5,7 +5,7 @@ https://lh4.googleusercontent.com/-RkN5ctI2_Zk/UBMM639KjNI/AAAAAAAALYk/2g43MP9R_
 
 These modifications apply to the first VBIT circuit board. They must be done in order for the board to work. 
 
-1) The video sockets were phonos. These are not available any more. Replace these with BNCs. Mostly this will make it easier to hook up to other equipment. RS Part number 713-0802. You can fit this through the corner hole and one of the phono mounting points. Put a blob of solder on the leg of the phono. It won't solder and will rattle around but at least it won't fall out. Then add wire links from the connector to the phono's empty signal pads.
+1) The video sockets were phonos. These are not available any more. Replace these with BNCs. Mostly this will make it easier to hook up to other equipment. RS Part number 713-0802. You can fit this through the corner hole and one of the phono mounting points. Put a blob of solder on the leg of the phono. It won't bond to the board and will rattle around but at least it won't fall out. Then add wire links from the connector to the phono's empty signal pads.
 https://lh4.googleusercontent.com/-fIkbbgUZlV0/UBMNKhIbvzI/AAAAAAAALZE/b9c9ddd45QQ/s676/IMAG1225.jpg
 https://lh3.googleusercontent.com/-JZQVumSb2XE/UBMNNLWwwSI/AAAAAAAALZM/FmKJTtDoQ6g/s676/IMAG1226.jpg
 
