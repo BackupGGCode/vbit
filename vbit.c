@@ -142,12 +142,14 @@ static void get_line (char *buff, int len)
 	USB_Serial_Send('\n');
 }
 
+/** Test that page sequencing is working
+ */
 uint8_t test3(void)
 {
 	uint8_t i;
 	xprintf(PSTR("Magazine streaming test\n\r"));
 	for (i=0;i<64;i++)
-		GetNextPage(0x8f);
+		GetNextPage(0x8f); // This returns a node pointer which we would normally use to get the page.
 	xprintf(PSTR("\n\r"));
 }
 
