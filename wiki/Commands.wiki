@@ -37,7 +37,7 @@ Example:
 
 QO111Q2233P445566778
 EO will read the output lines
+===? - System Health===
+This reports on the basic functions of each chip. The video chips must respond correctly using I2C. The FIFO must store and return data.
 ==Lots more commands and documentation to follow==
-
-
 
