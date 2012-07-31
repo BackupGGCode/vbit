@@ -8,14 +8,12 @@ If you want to develop code then you will be pleased to hear that all tool chain
 
 = Hardware =
 The hardware is two parts. A processor board that you buy ready made and a video board that you will have to make.
-  * Buy the JM-XD300-USB board from http://xmega.mattair.net/index.html
+  * Buy the MT-X1 (was JM-XD300-USB) board from http://xmega.mattair.net/index.html
   * You'll also need a miniusb cable to go with it.
-  * A VBIT board. Contact me if you want to buy a bare board. I have a few in stock made by Beta Layout. They do need a few patches.
+  * A VBIT board. Mine were made by Beta Layout. They do need a few patches. 
   * The project has circuit diagrams, gerbers and a bill of materials that I will post if anyone needs it.
 
-Sadly the processor board is probably not available so the project will be moving to the next generation Mattairtech board, which is due in May 2011. However, it has a real time clock so this will make it possible to run the teletext time without needing a PC host and will also help with date stamping files on the SD card. It could also be used for scheduling so again you could have a complete standalone system.
-
-Also the SAA7113 is a bit rare these days and my usual suppliers no longer stock it. If you find a reasonable source for small quantities of these then please let me know.
+The SAA7113 and SAA7121 are readily available from eBay direct from China. Normal electronics outlets no longer sell them.
 
 = Software =
 The software is in three broad categories, namely tools, libraries and source code.
@@ -32,6 +30,7 @@ These libraries may need to be installed.
 ==Source Code==
 This is the actual VBIT code. Currently it links into the dev board's demo software. More details about how to do it...
 ==Load the code==
+I'll rewrite this section for the MT-X1. These were the old instructions:
 The JM-XD200-USB should have no jumpers installed. Press HWB and momentarily press RESET. The unit will now be in AVRISP mode. It pretends to be AVRISP MkII so select that in AVR Studio 4. The target device is ATXMEGA128A1. On my system the compiled image is called XMEGA_Demo.hex. I don't think that you need to bother with the eep. If it programs OK then press RESET and the system should be running. The LEDs should start to flicker if there is a video source connected to VBIT.
 To find which COM port you have been assigned go into System->Hardware->Ports (Com). Find a suspicious com port with a number higher than 2. Look at the properties. It should identify itself as being JM-XD200-USB). Note the COM number and use this to connect using Hyperterminal.
 In Hyperterminal type
