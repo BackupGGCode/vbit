@@ -37,6 +37,10 @@
  * dealings in this Software without prior written authorization.
  *
  *****************************************************************************/
+ /**
+  * LED_2 is on during FIFO writing. It should be 18ms high/2ms low 
+  * LED_4 is on when we run out of time. If vbi overruns it will light. wtf?
+  */
 #include "vbi.h"
 
 /* hic sunt globals */
@@ -57,7 +61,7 @@ static TC1_t *timerFIFOBusyControl = &TCE1;
 void FieldInterruptHandler(void)
 {
 	const uint32_t day=(uint32_t)60*60*24;
-	LED_On( LED_3 ); // Got a field interrupt (video OK)
+	// LED_On( LED_3 ); // Got a field interrupt (video OK)
 	static int count=0;
 	//static int secs=0;
 	char str[20];
@@ -97,7 +101,9 @@ void FieldInterruptHandler(void)
 	// Also start the Window-of-access timer, the time while the FIFO may be written to
 	// This is about 18ms. Check this on a scope to ensure that we don't over-run the vbi.
 	// The preset at fosc/64. for 18ms is (16000000 * 0.018s)/64 = 4500.
-	timerFIFOBusyControl->PER=8500; // Ummm. No idea why x2. The scope shows it to be correct: !9000 worked!
+	timerFIFOBusyControl->PER=4500;
+	// Ummm. No idea why x2. The scope shows it to be correct: !9000 worked! (probably the XMega was being clocked at 8MHz)
+	// TODO: Check this on the MT-X1 with a scope
 	/* Select clock source. */
 	timerFIFOBusyControl->CTRLA = ( timerFIFOBusyControl->CTRLA & ~TC1_CLKSEL_gm ) | TC_CLKSEL_DIV64_gc;	
 	/* Set a low level overflow interrupt.*/
@@ -119,9 +125,12 @@ ISR(TCD0_OVF_vect)
 		LED_On( LED_4 );
 		// xputs(PSTR("ERR: vbi overrun\n")); // Nice to have a message but we don't have enough time
 		// work out why we never made it
+		// If this is still set, then the FIFO filling didn't complete.
+		// It should have terminated in plenty of time for vbi to happen.
+		// If it does collide then the output may get corrupted.
 	}
 	vbiDone=1;
-	LED_Off( LED_3 );
+	// LED_Off( LED_3 );
 	LED_Off( LED_2 ); // Start the Window of access here.
 	FIFOBusy=0;	
 } // ISR: vbi done
@@ -167,7 +176,7 @@ ISR(PORTC_INT0_vect)
  /// ISR for vbi timer
  
 /*! Timer Interrupt vector. FIFOBusy Timer
- * The timer is started when the vbi ends
+ * The first time around, the timer is started when the vbi ends
  * And stops after 18ms, shortly before the vbi resumes
  * This gives enough time for fillFIFO to terminate and release the FIFO. 
  * The timer is reloaded with 1ms and when this terminates, it also sets the FIFO to tx 
@@ -179,7 +188,7 @@ ISR(PORTC_INT0_vect)
  */
 ISR(TCE1_OVF_vect)
 {
-	uint16_t fifoReadAddress=fifoReadIndex*FIFOBLOCKSIZE;
+	uint16_t fifoReadAddress;
 	uint8_t nextBlock;
 	uint8_t field=PORTC.IN&VBIT_FLD?0:1;	// High on the even field
 // xputc('F');		// field debug
@@ -188,17 +197,26 @@ ISR(TCE1_OVF_vect)
 		// kill the clock so as not to let it bother us
 		// CTRLA means Control register A, NOT Port A
 		timerFIFOBusyControl->CTRLA = ( timerFIFOBusyControl->CTRLA & ~TC1_CLKSEL_gm ) | TC_CLKSEL_OFF_gc;
-		// Reset the FIFO ready to clock out TTX
-		fifoReadAddress=(fifoReadIndex*FIFOBLOCKSIZE); // move the buffer pointer to the next field's worth
-		SetSerialRamAddress(SPIRAM_READ, fifoReadAddress); // Set the FIFO to read from the current address
-		PORTC.OUT|=VBIT_SEL; // Set the mux to DENC.
-		// 1) Are we wrapping round to 0?
+		// 1) Increment and wrap round to 0 if needed
 		nextBlock=(fifoReadIndex+1)%MAXFIFOINDEX;
-		// 2) Is the odd/even phase correct?
+		// 2) Does the FIFO have a packet ready?
+		if (nextBlock==fifoWriteIndex)
+		{
+			xputc('Y'); // no data available
+			return;
+		}
+		// 3) Is the odd/even phase correct?
 		if (nextBlock%2 != field) // Not correct? Wait for the next field. TODO: Check that the phase is correct! 
 		{
-			// xputc('y');		// phase wrong
+			xputc('y');		// phase wrong (were we delayed doing something?)
 			return;
+		}
+		else
+		{
+			// Reset the FIFO ready to clock out TTX
+			fifoReadAddress=(fifoReadIndex*FIFOBLOCKSIZE); // move the buffer pointer to the next field's worth
+			SetSerialRamAddress(SPIRAM_READ, fifoReadAddress); // Set the FIFO to read from the current address
+			PORTC.OUT|=VBIT_SEL; // Set the mux to DENC.
 		}
 		// At this point we are almost ready to transmit so this is where we should consider subtitles
 		// 2a) Do we have subtitles buffered and ready?
@@ -206,12 +224,6 @@ ISR(TCE1_OVF_vect)
         // 2c) Making sure that we don't upset the main packet stream 
 
 		
-		// 3) Does the FIFO have a packet ready?
-		if (nextBlock==fifoWriteIndex)
-		{
-			// xputc('Y'); // no data available
-			return;
-		}
 		fifoReadIndex=nextBlock;	
 	}
 	else

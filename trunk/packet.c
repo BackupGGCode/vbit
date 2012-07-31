@@ -189,7 +189,7 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 	subcode>>=4;
 	packet[10]=HamTab[(subcode&0x03)]; // S4 TBA C6, C5
 	packet[11]=HamTab[0]; // TBA C7 to C10
-	packet[12]=HamTab[0]; // TBA C11 to C14
+	packet[12]=HamTab[0]; // TBA C11 to C14 (0=parallel & language 0 (English))
 	strncpy(&packet[13],caption,24); // This is dangerously out of order! Need to range check and fill as needed
 	// Stuff the page number in. TODO: make it flexible format, and work with hex numbers etc.
 	packet[20]=mag+'0';
@@ -320,6 +320,9 @@ static void copyFL(char *packet, char *textline, PAGE *page)
 
 /** This generates the next line
  * So, tell me how this can support parallel streams?
+ * Easy! There isn't a lot of "state" needed.
+ * We have the state of the magazine. Already got that.
+ * Then we will need to look after the file pointers so that we can read from multiple magazines.
  */
 static unsigned char insert(char *packet, uint8_t field)
 {
@@ -328,33 +331,43 @@ static unsigned char insert(char *packet, uint8_t field)
 	static uint8_t savefield;
 	static DWORD fileptr;		// Used to save the file pointer to the body of the ttx file
 	static PAGE page;
-	char pagename[15];
-	char listentry[25];
+	//char pagename[15];
+	//char listentry[25];
 	char data[80];
 	char *str;
-	char *p;
+	// char *p;
 	unsigned char row;
+	static uint8_t myfield;
 	FRESULT res=0;	
 	BYTE drive=0;
 	DWORD pageptr;				// Pointer to the start of page in pages.all
 	DWORD pagesize;				// Size of the page in pages.all
 	unsigned char mag=0;	// just one mag for now!
 	// xputc(state[mag]+'0');
+	// DEBUG CODE
+	if (myfield!=field)
+	{
+		myfield=field;
+		// xprintf(PSTR("\n\rF%d"),field);		
+	}
+	// END OF DEBUG CODE
 	switch (state[mag])
 	{
 	case STATE_BEGIN: // Open the first page and drop through to idle
 		// xputs(PSTR("B"));
-		GetPage(&pageptr,&pagesize,0x8f);	// TODO: A proper mask
+		// Open the onair folder
 		res=(WORD)disk_initialize(drive);	// di0
-		put_rc(f_mount(drive, &Fatfs[drive]));	// fi0
+		put_rc(f_mount(drive, &Fatfs[drive]));	// fi0 /*!!!*/
 		put_rc(f_chdir("onair"));
-		res=f_open(&listFIL,"mag1.lst",FA_READ);	
+		// res=f_open(&listFIL,"mag1.lst",FA_READ);	
+		res=GetPage(&pageptr,&pagesize,0xff);	// Get the next transmission page details. TODO: A proper mask. TODO: A return value
 		if (res)
 		{
-			xprintf(PSTR("[insert]Epic Fail 1\n"));			
+			xprintf(PSTR("[insert]Epic Fail: COuld not open initial page\r\n"));			
 			put_rc(res);
 			return 1;
 		}	
+		/* This legacy stuff extracts the pageptr and ,pagesize 
 		f_gets(listentry,sizeof(listentry),&listFIL);		
 		str=strchr(listentry,',');
 		if (str)
@@ -374,6 +387,7 @@ static unsigned char insert(char *packet, uint8_t field)
 			//xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);					
 		}
 		xprintf(PSTR("\n\rf=%s\n\r"),pagename);		
+		*/
 		state[mag]=STATE_IDLE;
 		res=f_open(&pagefileFIL,"pages.all",FA_READ);		// Only need to open this once!
 		// xputs(PSTR("STATE_BEGIN\n\n\r"));
@@ -386,9 +400,9 @@ static unsigned char insert(char *packet, uint8_t field)
 		// Now tx the header
 		// Need to do the whole parse and parity bit here 
 		// open pagefile
-		LED_On( LED_1 );		// LED5 - high while seeking a folder
+		//LED_On( LED_1 );		// LED5 - high while seeking a folder
 		res=f_lseek(&pagefileFIL,pageptr); // Instead of f_open just use lseek
-		LED_Off( LED_1 ); // Need to define the correct LED
+		//LED_Off( LED_1 ); // Need to define the correct LED
 		if (res)
 		{
 			xprintf(PSTR("[insert]Epic Fail 2\n"));			
@@ -413,15 +427,17 @@ static unsigned char insert(char *packet, uint8_t field)
 				break; // what else should we do if we get here?
 			}
 		}
-		// xprintf(PSTR("M%d P%X, "),page.mag,page.page);
+		// xprintf(PSTR("MPP: %d%02X\n\r"),page.mag,page.page);
 		// create the header packet. TODO: Add a system wide header caption
+		// xputs(PSTR("H"));
 		Header(packet,page.mag,page.page,page.subpage,page.control,g_Header);		// 6 - 24 characters plus 8 for clock
 		state[mag]=STATE_HEADER;
 		break;
 	case STATE_HEADER: // We are waiting for the field to change before we can tx
-		//xputs(PSTR("H"));
+		// xputs(PSTR("H"));
 		if (field==savefield)
 		{
+			// xputs(PSTR("W"));
 			QuietLine(packet,0x0f);	// TODO: We would let the next magazine steal this line
 			break;
 		}
@@ -429,6 +445,14 @@ static unsigned char insert(char *packet, uint8_t field)
 	case STATE_SENDING:
 		if (f_eof(&pagefileFIL) || noCarousel || (pagefileFIL.fptr>=(pageptr+pagesize))) // Page done?
 		{
+			res=GetPage(&pageptr,&pagesize,0xff);	// Get the next transmission page details. TODO: A proper mask. TODO: A return value
+			if (res)
+			{
+				xprintf(PSTR("[insert]Epic Fail: COuld not open initial page\r\n"));			
+				put_rc(res);
+				return 1;
+			}
+			/* legacy code
 			if (f_eof(&listFIL)) // List All done? Start again at the top of the list
 			{
 				// f_close(&pagefile);
@@ -452,12 +476,14 @@ static unsigned char insert(char *packet, uint8_t field)
 				xatoi(&p,&pagesize);
 				// xprintf(PSTR("page=%lX size=%lX\n\r"),(unsigned long) pageptr,(unsigned long) pagesize);									
 			}
-			// xprintf(PSTR("L-%s "),pagename);				
+			// xprintf(PSTR("L-%s "),pagename);	
+*/			
 			state[mag]=STATE_IDLE;
 		}
 		else
 		{
 			// Get the next line
+			// xputs(PSTR("S"));
 			str=f_gets(data,sizeof(data),&pagefileFIL);
 			if (str)
 			{
@@ -579,7 +605,7 @@ void FillFIFO(void)
 			case '6' :;
 			case '7' :;
 			case '8' :;
-				//xputs(PSTR("i"));			
+				// xputs(PSTR("i"));			
 				insert(packet,evenfield);
 				break;
 			case 'Z' : // How can this even get here when there is no Z?
@@ -663,7 +689,7 @@ void FillFIFO(void)
 		if (FIFOBusy) // Can not write because the FIFO is busy
 		{
 			packetToWrite=1; // Flag that packet has something we need to send the next time
-			// xputs(PSTR("x"));			
+			xputs(PSTR("x"));			
 			return;
 		}
 
@@ -678,11 +704,15 @@ void FillFIFO(void)
 			fifoLineCounter=0;
 			if (fifoWriteIndex==fifoReadIndex)
 			{
+				xputs(PSTR("f"));
 				return;	// FIFO Full
 			}	
-			// Set the next SPI RAM address
-			fifoWriteAddress=fifoWriteIndex*FIFOBLOCKSIZE+fifoLineCounter*PACKETSIZE; 
-			SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO next address
+			else
+			{
+				// Set the next SPI RAM address
+				fifoWriteAddress=fifoWriteIndex*FIFOBLOCKSIZE+fifoLineCounter*PACKETSIZE; 
+				SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO next address
+			}
 		}	
 		// xputc(fifoLineCounter+'a');	// show the current line number
 		
