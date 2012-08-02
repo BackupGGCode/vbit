@@ -262,8 +262,7 @@ static unsigned char copyOL(char *packet, char *textline)
 		}
 		p++;
 	}
-if (!*textline)
-		xputc('T');
+// if (!*textline) xputc('T'); // Not sure what this means
 	return linenumber;
 } // copyOL
 
@@ -689,7 +688,7 @@ void FillFIFO(void)
 		if (FIFOBusy) // Can not write because the FIFO is busy
 		{
 			packetToWrite=1; // Flag that packet has something we need to send the next time
-			xputs(PSTR("x"));			
+			// xputs(PSTR("x")); // Flag that the line was saved for the next field 			
 			return;
 		}
 
@@ -704,7 +703,7 @@ void FillFIFO(void)
 			fifoLineCounter=0;
 			if (fifoWriteIndex==fifoReadIndex)
 			{
-				xputs(PSTR("f"));
+				// xputs(PSTR("f")); // FIFO FULL WARNING
 				return;	// FIFO Full
 			}	
 			else

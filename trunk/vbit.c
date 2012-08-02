@@ -37,6 +37,7 @@ static unsigned char statusI2C;
 static unsigned char statusVBI;
 static unsigned char statusFIFO;
 static unsigned char statusDisk;
+static char pageFilter[6]; 
 
 void testIni(void)
 {
@@ -151,6 +152,7 @@ uint8_t test3(void)
 	for (i=0;i<64;i++)
 		GetNextPage(0x8f); // This returns a node pointer which we would normally use to get the page.
 	xprintf(PSTR("\n\r"));
+	return 0; // nothing to return?
 }
 
 /* SPI ram test */
@@ -199,6 +201,72 @@ static void report(uint8_t ok)
 		xputs(PSTR("good\n\r"));
 } // report
 
+/** Given the page count string in pageFilter
+ * \return The page count in that range.
+ */
+int FindPageCount(void)
+{
+	char lower[6];
+	char upper[6];
+	char ch;
+	unsigned int high,low;
+	uint16_t i; // Don't insert more than 64k pages!!!
+	NODEPTR np;
+	uint16_t pageCount;
+	uint16_t addr;
+	// Scan the pageFilter string, making a high and low bound value
+	for (i=0;i<3;i++)
+	{
+		ch=pageFilter[i];	// Get the character from the page filter
+		if (i==0 && ch!='*') ch--; // because mag 1..8 maps to 0..7 in the page array
+		if (ch=='*')
+		{
+			switch (i) // Set high/low bounds
+			{
+			case 0: // mag
+				lower[i]='0';
+				upper[i]='7';
+				break;
+			case 1:; // page
+			case 2:
+				lower[i]='0';
+				upper[i]='f';
+				break;
+			case 3:; // subpage
+			case 4:
+				lower[i]='0';
+				upper[i]='9';
+				break;
+			}
+		}
+		else // Just copy the digit
+		{
+			lower[i]=ch;
+			upper[i]=ch;
+		}
+	}
+	// cap the string
+	lower[3]=0;
+	upper[3]=0;
+	// convert hex digits to uint
+	sscanf(lower,"%5X",&low);
+	sscanf(upper,"%5X",&high);
+	// Fix for mag 8 to map to 0
+	if (low>=0x800) low-=0x800;
+	if (high>=0x800) high-=0x800;	
+	xprintf(PSTR("%s - From %5X to %5X\n\r"),pageFilter,low,high);
+	pageCount=0;
+	// Iterate looking through the page array for pages.
+	for (i=low;i<high;i++)
+	{
+		addr=i+i;
+		np=GetNodePtr(&addr);
+		if (np!=NULLPTR)
+			pageCount++;
+	}
+	return pageCount;
+} // FindPageCount
+
 /* Command interpreter for VBIT,
 	The leading SO and trailing carriage return are already removed
 	The X command returns 2
@@ -209,10 +277,13 @@ static int vbit_command(char *Line)
 	unsigned char rwmode;
 	unsigned char returncode=0;
 	unsigned int pagecount;
+	char ch;
+	unsigned char valid;
 	long n;
 	unsigned char i;
 	char str[80];
 	char *ptr;
+	char *dest;
 	str[0]='O';
 	str[1]='K';
 	str[2]='\0';
@@ -241,76 +312,30 @@ static int vbit_command(char *Line)
 			SDCreateLists(i,pagecount);
 		sei();
 		break;
-	case 'H': // H or HO. Set header
-		if (Line[2]=='\0')
+	case 'E' : // EO, ES, EN, EP, EL, EM - examine 
+		switch (Line[2])
 		{
-			strcpy_P(str,"      ");
-			strncat(str,g_Header,18);	// Just readback the header. TODO. Get the correct length
-			str[40]=0;
-		}
-		else
-		{
-			strncpy(g_Header,&Line[9],18); // accept new header
-		}
-		// TODO: Save this value back to the INI file.
-		break;
-	case 'I': // III or I2
-		// I20xnnmm
-		if (Line[2]=='2') // SAA7113 I2C. value. 0xnnmm where nn=address mm=value to write 
-		{
-			strcpy_P(str,PSTR("Setting SAA7113 I2C register\n"));
-			ptr=&Line[3];
-			xatoi(&ptr,&n);
-			xprintf(PSTR("Blah=%04X\n"),n);
-			i2c_SetRegister((n>>8)&0xff,n&0xff);			
-			xprintf(PSTR("Done\n"));
-		}		
-		break;
-	case 'Y': /* Y - Version */
-		strcpy_P(str,PSTR("VBIT620 Version 0.01\n"));
-		break;		
-	case 'T': // TEST
-		// testIni();
-		test3();
-		// test2();
-		strcpy_P(str,PSTR("OK\n"));
-		break;
-	case 'U': // TEST
-		Init830F1();
-		break;
-	case 'W': // TEST Ad-tec opt outs
-		// W14 - Send a mode 14 opt out
-		// We want to be able to test various ATP950 modes.
-		// read the parameter
-		ptr=&Line[2];	
-		xatoi(&ptr,&n);
-		OptOutMode=n;
-		xprintf(PSTR("W=%04X\n"),OptOutMode);
-		// Which command? Set the appropriate opt out mode
-		switch (OptOutMode)
-		{
-		case 14:
-			xprintf(PSTR("Mode 14 shenanigans\n"),n);
-			// Or just flag that we want an opt-out packet
-			OptOutMode=14;
-			OptOutType=OPTOUT_START;
-			// Assemble a mode 14 packet
+		case 'M': // EM - Return Miscellaneous flags
+			{
+				// These are BFLSU. The code below is not correct
+				n = ini_getl("service", "serialmode", 0, inifile);	
+				if (n)
+					xputs(PSTR("20"));
+				else
+					xputs(PSTR("00"));
+				break;
+			}
+				break;
+			default:
+				returncode=1;
+		case 'O': // EO - Output dataline actions set by QO
+			// 18 characters on a line, but odd ignores last action
+			n = ini_gets("service", "outputodd", "111Q2233P445566778", str, sizearray(str), inifile);	
+			n = ini_gets("service", "outputeven", "111Q2233P445566778", str, sizearray(str), inifile);	
+			xprintf(PSTR("%s"),str);
 			break;
-		default:
-			OptOutMode=0;
-			returncode=1;
-		}
-		// Assemble the packet and 
-		break;
-	case 'X':	/* X - Exit */
-		return 2;	
-	case 'O':	/* O - Opt out. Example: O1c*/
-		/* Two digit hex number. Only 6 bits are used so the valid range is 0..3f */
-			ptr=&Line[0];
-			Line[0]='0';Line[1]='x';
-			xatoi(&ptr,&n);
-			OptRelays=n & 0x3f;
-		break;		
+		}		
+		break; // E commands
 	case 'G': /* G - Packet 8/30 format 1 [p830f1]*/
 		if (rwmode==CMD_MODE_NONE)
 		{
@@ -364,30 +389,78 @@ static int vbit_command(char *Line)
 			returncode=1;	
 		}
 		break;
-	case 'E' : // EO, ES, EN, EP, EL, EM - examine 
-		switch (Line[2])
+	case 'H': // H or HO. Set header
+		if (Line[2]=='\0')
 		{
-		case 'M': // EM - Return Miscellaneous flags
+			strcpy_P(str,"      ");
+			strncat(str,g_Header,18);	// Just readback the header. TODO. Get the correct length
+			str[40]=0;
+		}
+		else
+		{
+			strncpy(g_Header,&Line[9],18); // accept new header
+		}
+		// TODO: Save this value back to the INI file.
+		break;
+	case 'I': // III or I2
+		// I20xnnmm
+		if (Line[2]=='2') // SAA7113 I2C. value. 0xnnmm where nn=address mm=value to write 
+		{
+			strcpy_P(str,PSTR("Setting SAA7113 I2C register\n"));
+			ptr=&Line[3];
+			xatoi(&ptr,&n);
+			xprintf(PSTR("Blah=%04X\n"),n);
+			i2c_SetRegister((n>>8)&0xff,n&0xff);			
+			xprintf(PSTR("Done\n"));
+		}		
+		break;
+	case 'O':	/* O - Opt out. Example: O1c*/
+		/* Two digit hex number. Only 6 bits are used so the valid range is 0..3f */
+			ptr=&Line[0];
+			Line[0]='0';Line[1]='x';
+			xatoi(&ptr,&n);
+			OptRelays=n & 0x3f;
+		break;		
+	case 'P': // P<mppss>. An invalid character will set null. P without parameters will return the currebt value
+		ptr=&Line[2];
+		if (!*ptr)
+		{
+			xprintf(PSTR("%s\n\r"),pageFilter);
+			break;
+		}
+		dest=pageFilter;
+		for (i=0;i<5;i++)
+		{
+			ch=*ptr++;
+			if (ch=='*')
+				valid=1;
+			else
 			{
-				// These are BFLSU. The code below is not correct
-				n = ini_getl("service", "serialmode", 0, inifile);	
-				if (n)
-					xputs(PSTR("20"));
-				else
-					xputs(PSTR("00"));
+				switch (i)
+				{
+				case 0 : // M
+					valid=(ch>'0' && ch<'9' );break;
+				case 1 :; // PP
+				case 2 :
+					valid=((ch>='0' && ch<='9') || (ch>='A' && ch<='F'));break;
+				case 3 :; // SS
+				case 4 :
+					valid=(ch>='0' && ch<='9');break;
+				}
+			}
+			if (valid)
+				*dest++ = ch;
+			else
+			{
+				dest[0]=0;
 				break;
 			}
-				break;
-			default:
-				returncode=1;
-		case 'O': // EO - Output dataline actions set by QO
-			// 18 characters on a line, but odd ignores last action
-			n = ini_gets("service", "outputodd", "111Q2233P445566778", str, sizearray(str), inifile);	
-			n = ini_gets("service", "outputeven", "111Q2233P445566778", str, sizearray(str), inifile);	
-			xprintf(PSTR("%s"),str);
-			break;
-		}		
-		break; // E commands
+		}
+		*dest=0;	// terminate the string
+		// TODO: Find out how many pages are in this page range
+		pagecount=FindPageCount();
+		xprintf(PSTR("%d"),pagecount); // Where nnn is the number of pages in this filter.
+		break;
 	case 'Q' : // QO, QM
 		if (Line[2]=='M') // QMnn
 		{
@@ -446,6 +519,44 @@ static int vbit_command(char *Line)
 	case 'S' : ; // Newfor. This should be a Newfor command. Hmm, but how to escape SO and SI?
 		// Work out how to escape data. The parity and reserved characters will break the CI
 		break;
+	case 'T': // TEST
+		// testIni();
+		test3();
+		// test2();
+		strcpy_P(str,PSTR("OK\n"));
+		break;
+	case 'U': // TEST
+		Init830F1();
+		break;
+	case 'W': // TEST Ad-tec opt outs
+		// W14 - Send a mode 14 opt out
+		// We want to be able to test various ATP950 modes.
+		// read the parameter
+		ptr=&Line[2];	
+		xatoi(&ptr,&n);
+		OptOutMode=n;
+		xprintf(PSTR("W=%04X\n"),OptOutMode);
+		// Which command? Set the appropriate opt out mode
+		switch (OptOutMode)
+		{
+		case 14:
+			xprintf(PSTR("Mode 14 shenanigans\n"),n);
+			// Or just flag that we want an opt-out packet
+			OptOutMode=14;
+			OptOutType=OPTOUT_START;
+			// Assemble a mode 14 packet
+			break;
+		default:
+			OptOutMode=0;
+			returncode=1;
+		}
+		// Assemble the packet and 
+		break;
+	case 'X':	/* X - Exit */
+		return 2;	
+	case 'Y': /* Y - Version. Y2 should return a date string */
+		strcpy_P(str,PSTR("VBIT620 Version 0.01\n"));
+		break;		
 	case '?' :; // Status TODO
 		xprintf(PSTR("STATUS %02X\n\r"),statusI2C);
 		// Want to know if the chips check out and the file system is OK
@@ -493,6 +604,8 @@ int RunVBIT(void)
 	f_mount(0,&Fatfs[0]);
 	InitStream();
 	InitDisplayList();				// Do this before we start interrupts!!!
+	
+	pageFilter[0]=0;		// I think that statics get zeroed anyway.
 
 	// Configure VBIT's spiram port and set the spiram to sequential mode
 	spiram_initialise();

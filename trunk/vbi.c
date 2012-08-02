@@ -202,13 +202,13 @@ ISR(TCE1_OVF_vect)
 		// 2) Does the FIFO have a packet ready?
 		if (nextBlock==fifoWriteIndex)
 		{
-			xputc('Y'); // no data available
+			// xputc('Y'); // no data available
 			return;
 		}
 		// 3) Is the odd/even phase correct?
 		if (nextBlock%2 != field) // Not correct? Wait for the next field. TODO: Check that the phase is correct! 
 		{
-			xputc('y');		// phase wrong (were we delayed doing something?)
+			// xputc('y');		// phase wrong (were we delayed doing something?)
 			return;
 		}
 		else
