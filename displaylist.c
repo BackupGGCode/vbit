@@ -221,6 +221,7 @@ xprintf(PSTR("\n\r"));
  } // MakeFreeList
  
  /** Insert a page into the display list
+  * \param mag - 1..8
   * \param page - pointer to a page structure.
   * \return Might be useful to return something 
   */
@@ -229,8 +230,9 @@ xprintf(PSTR("\n\r"));
 	NODEPTR np, newnodeptr;
 	uint16_t cellAddress;
 	DISPLAYNODE node;
-	// What is the address of this page? (note that mag 8 is 0 in this index calculation)
-	cellAddress=(((mag & 0x07)<<8)+page)*sizeof(NODEPTR);
+	mag=(mag-1) & 0x07; // mags are 0 to 7 in this array
+	// What is the address of this page? 
+	cellAddress=((mag<<8)+page)*sizeof(NODEPTR);
 	// xprintf(PSTR("[LinkPage] Enters page ix=%d cell=%d\n\r"),ix,cellAddress);
 	np=GetNodePtr(&cellAddress);
 	// Is the cell empty?
