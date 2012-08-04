@@ -47,6 +47,9 @@
 #ifndef _PACKET_H_ 
 #define _PACKET_H_ 
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include "avr_compiler.h"
 #include <avr/pgmspace.h>
 #include "xitoa.h"

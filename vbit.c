@@ -37,7 +37,48 @@ static unsigned char statusI2C;
 static unsigned char statusVBI;
 static unsigned char statusFIFO;
 static unsigned char statusDisk;
+
 static char pageFilter[6]; 
+/** pageFilterToArray
+ *  Takes the page filter and finds the page array index
+ * \param if high is set, it converts * to the high value.
+ * \return An index into the page array
+ */
+uint16_t pageFilterToArray(uint8_t high)
+{
+	char value[4];
+	uint8_t i;
+	char ch;
+	uint16_t result;
+		// Scan the pageFilter string, making a high and low bound value
+	for (i=0;i<3;i++)
+	{
+		ch=pageFilter[i];	// Get the character from the page filter
+		if (i==0 && ch!='*') ch--; // because mag 1..8 maps to 0..7 in the page array
+		if (ch=='*')
+		{
+			switch (i) // Set high/low bounds
+			{
+			case 0: // mag
+				if (high) value[i]='7'; else value[i]='0';				
+				break;
+			case 1:; // page
+			case 2:
+				if (high) value[i]='f'; else value[i]='0';
+				break;
+			}
+		}
+		else // Just copy the digit
+		{
+			value[i]=ch;
+		}
+	}
+	// cap the string
+	value[3]=0;
+	// convert hex digits to uint
+	sscanf(value,"%3X",&result);
+	return result+result; // Because the page array has 2 byte cells	
+} // pageFilterToArray
 
 void testIni(void)
 {
@@ -267,6 +308,43 @@ int FindPageCount(void)
 	return pageCount;
 } // FindPageCount
 
+/** Dump the first 19 lines of the current page
+ */
+void dumpPage(void)
+{
+	DISPLAYNODE n;
+	NODEPTR np;
+	FRESULT res;
+	uint16_t idx;
+	uint16_t charcount;		
+	PAGEINDEXRECORD ixRec;
+	char data[80];
+	//int i;
+	FIL Page;	// hope we have enough memory for this!
+	// xprintf(PSTR("[dumpPage]\n\r"));
+	idx=pageFilterToArray(0);
+	np=GetNodePtr(&idx);	// np points to the displaynode
+	GetNode(&n,np);
+	// At this point we need to get the pageindex out of pages.idx
+	// NB. Shared file access won't be a problem, I hope.
+	// xprintf(PSTR("Now we need to look up pages.idx[%d]\n\r"),n.pageindex);
+
+	f_lseek(&listFIL,(n.pageindex)*sizeof(PAGEINDEXRECORD));	// Seek the page index
+	f_read(&listFIL,&ixRec,sizeof(PAGEINDEXRECORD),&charcount);	// and read it	
+	
+	res=f_open(&Page,"pages.all",FA_READ);					// Now look for the relevant page
+	f_lseek(&Page,ixRec.seekptr);	// Seek the actual page
+	// Now we need to parse the page.
+	while (Page.fptr<(ixRec.seekptr+ixRec.pagesize)) // Need to actually parse the data? Don't think so
+	{
+		if (!f_gets(data,sizeof(data),&Page)) break;
+		xprintf(PSTR("%s"),data);
+	}
+
+	f_close(&Page);
+	// and finally parse the page and dump 19 lines of text
+} // dumpPage
+
 /* Command interpreter for VBIT,
 	The leading SO and trailing carriage return are already removed
 	The X command returns 2
@@ -301,6 +379,9 @@ static int vbit_command(char *Line)
 	else
 	switch (Line[1])
 	{
+	case 'b': // Dump first 19 lines of current page
+		dumpPage();
+		break;
 	case 'C': // Create magazine lists
 		// TODO: Kill video
 		// TODO: C<pages to pre-allocate> // this would speed up the process immensely
@@ -351,6 +432,18 @@ static int vbit_command(char *Line)
 			/** Where is the initial page done? The code below is wrong */
 			//SetInitialPage(pkt830,str1,str2); // nb. Hard coded to 100
 			break;
+		case 'D' : /* up to 20 characters label*/
+			if (rwmode==CMD_MODE_READ)
+			{			
+				n = ini_gets("p830f1", "label", "VBITFax             ", str, sizearray(str), inifile);			
+				xprintf(PSTR("%s"),str);
+			}
+			if (rwmode==CMD_MODE_WRITE)
+			{
+				n = ini_puts("p830f1", "label", &Line[4], inifile);	
+				SetStatusLabel(pkt830,&Line[4]);
+			}			
+			break;
 		case 'L' : /* Link */
 			xputs(PSTR("GUL command\n"));
 			/* Alrighty. The MAG is already in the MRAG. All we actually need is 
@@ -373,32 +466,20 @@ static int vbit_command(char *Line)
 			xputs(PSTR("GUT command\n"));
 			i2c_init();			
 			break;
-		case 'D' : /* up to 20 characters label*/
-			if (rwmode==CMD_MODE_READ)
-			{			
-				n = ini_gets("p830f1", "label", "VBITFax             ", str, sizearray(str), inifile);			
-				xprintf(PSTR("%s"),str);
-			}
-			if (rwmode==CMD_MODE_WRITE)
-			{
-				n = ini_puts("p830f1", "label", &Line[4], inifile);	
-				SetStatusLabel(pkt830,&Line[4]);
-			}			
-			break;
 		default:
 			returncode=1;	
 		}
 		break;
 	case 'H': // H or HO. Set header
-		if (Line[2]=='\0')
+		if (Line[2]=='\0' || Line[4]=='\0') // Don't get confused by checksums
 		{
-			strcpy_P(str,"      ");
-			strncat(str,g_Header,18);	// Just readback the header. TODO. Get the correct length
+			strcpy_P(str,PSTR("      "));
+			strncat(str,g_Header,25);	// Just readback the header. TODO. Get the correct length
 			str[40]=0;
 		}
 		else
 		{
-			strncpy(g_Header,&Line[9],18); // accept new header
+			strncpy(g_Header,&Line[9],25); // accept new header
 		}
 		// TODO: Save this value back to the INI file.
 		break;
@@ -421,7 +502,7 @@ static int vbit_command(char *Line)
 			xatoi(&ptr,&n);
 			OptRelays=n & 0x3f;
 		break;		
-	case 'P': // P<mppss>. An invalid character will set null. P without parameters will return the currebt value
+	case 'P': // P<mppss>. An invalid character will set null. P without parameters will return the current value
 		ptr=&Line[2];
 		if (!*ptr)
 		{
@@ -519,10 +600,41 @@ static int vbit_command(char *Line)
 	case 'S' : ; // Newfor. This should be a Newfor command. Hmm, but how to escape SO and SI?
 		// Work out how to escape data. The parity and reserved characters will break the CI
 		break;
-	case 'T': // TEST
+	case 'T': // T <hhmmss> (this syntax was superceded by GUT and GUt)
 		// testIni();
-		test3();
+		// test3();
 		// test2();
+		// UTC is the time of day in seconds
+		Line[8]=0;
+		ptr=&(Line[2]);
+		UTC=0; // Maybe save this. We need to revert if it fails.
+		for (i=2;i<8;i++)
+		{
+			// First multiply according to which digit
+			switch (i)
+			{
+			case 3:;
+			case 5:;
+			case 7:
+				UTC*=10;break;
+			case 4:;
+			case 6:
+				UTC*=6;break; // (already *10!)
+			}
+			ch=*(ptr++)-'0';
+			UTC+=ch;
+		}
+		
+		xprintf(PSTR("UTC=%d\n\r"),UTC);
+		
+		/**
+		UTC=Line[7]-'0';				// s units
+		UTC=UTC+(Line[6]-'0')*10;		// s tens
+		UTC=UTC+(Line[5]-'0')*60;		// m units
+		UTC=UTC+(Line[4]-'0')*60*10;	// m tens
+		UTC=UTC+(Line[3]-'0')*60*60;	// h units
+		UTC=UTC+(Line[2]-'0')*60*60*10;	// h tens
+		*/
 		strcpy_P(str,PSTR("OK\n"));
 		break;
 	case 'U': // TEST

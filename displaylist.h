@@ -35,12 +35,11 @@ typedef uint16_t NODEPTR;
 // What is the size of the serial ram? (32kBytes)
 #define MAXSRAM (0x8000) 
 
-
-/* A pageindex record */
+/* A pageindex record as stored in pages.idx */
 typedef struct
 {
-	uint32_t seekptr;
-	uint16_t pagesize;
+	uint32_t seekptr;	// This is the pointer to the start of a page
+	uint16_t pagesize;  // And the number of bytes in the page
 } PAGEINDEXRECORD;
 
 /** defines a display list node. However...
@@ -49,7 +48,7 @@ typedef struct
  */
 typedef struct
 {
-NODEPTR pageindex;
+NODEPTR pageindex; // Not sure that this is a NODEPTR type but we can worry about that later
 NODEPTR next;
 // uint8_t mag;	// 0..7 where 0 is mapped to 8. mag is implicit
 // uint8_t page;	// Page number 0x00 to 0xff
@@ -82,14 +81,16 @@ The data is in two parts, a big index
 * The memory allocation map is computed thus:
 * PageArray has 8 magazines, each of which can have 256 pages. Each cell is a 2 byte NODEPTR.
 * 8x256x2=4kB or 0x1000
-* So PageArray is 0x0000 to 0x1000
+* So PageArray is 0x0000 to 0x1000 (16 bit index)
 *
 * The maximum number of nodes that can fit in the PageList are:
 * (0x8000-0x1000)/2=0x1666 or 5734
 */
 
 // Should be array size 4096 and node count 5734
+// PAGEARRAY is the lower 4k words of the serial ram
 #define PAGEARRAYSIZE (8 * 256 * sizeof (NODEPTR))
+// Nodes are in the remainder of the serial ram
 #define MAXNODES ((MAXSRAM - PAGEARRAYSIZE)/sizeof(DISPLAYNODE))
 
 /*

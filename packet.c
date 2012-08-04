@@ -167,6 +167,8 @@ void QuietLine(char * packet, uint8_t code)
 void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int subcode,
 			unsigned int control, char *caption)
 {
+	char *p;
+	char ch;
 	static int lastsec;
 //	char date[10]; TODO: Implement something convincing
 	// BEGIN: Special effect. Go to page 100 and press Button 1.
@@ -191,10 +193,16 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 	packet[11]=HamTab[0]; // TBA C7 to C10
 	packet[12]=HamTab[0]; // TBA C11 to C14 (0=parallel & language 0 (English))
 	strncpy(&packet[13],caption,24); // This is dangerously out of order! Need to range check and fill as needed
-	// Stuff the page number in. TODO: make it flexible format, and work with hex numbers etc.
-	packet[20]=mag+'0';
-	packet[21]=(page/0x10)+'0';
-	packet[22]=(page%0x10)+'0';
+	// Stuff the page number in. TODO: make it work with hex numbers etc.
+	p=strstr(packet,"mpp"); 
+	if (p) // if we have mpp, replace it with the actual page number...
+	{
+		*p++=mag+'0';
+		ch=page>>4; // page tens
+		*p++=ch+(ch>9?'A':'0');
+		ch=page%0x10; // page units
+		*p++=ch+(ch>9?'A':'0');
+	}
 	// xputc(packet[20]); // Echo the mag for debugging
 	// Stick the time in. Need to implement flexible date/time formatting
 	utc=UTC;
