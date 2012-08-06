@@ -295,7 +295,7 @@ int FindPageCount(void)
 	// Fix for mag 8 to map to 0
 	if (low>=0x800) low-=0x800;
 	if (high>=0x800) high-=0x800;	
-	xprintf(PSTR("%s - From %5X to %5X\n\r"),pageFilter,low,high);
+	//xprintf(PSTR("%s - From %5X to %5X\n\r"),pageFilter,low,high);
 	pageCount=0;
 	// Iterate looking through the page array for pages.
 	for (i=low;i<high;i++)
@@ -474,14 +474,14 @@ static int vbit_command(char *Line)
 		if (Line[2]=='\0' || Line[4]=='\0') // Don't get confused by checksums
 		{
 			strcpy_P(str,PSTR("      "));
-			strncat(str,g_Header,25);	// Just readback the header. TODO. Get the correct length
+			strncat(str,g_Header,32);	// Just readback the header. TODO. Get the correct length
 			str[40]=0;
 		}
 		else
 		{
-			strncpy(g_Header,&Line[9],25); // accept new header
+			strncpy(g_Header,&Line[9],32); // accept new header
 		}
-		// TODO: Save this value back to the INI file.
+		n = ini_puts("service", "header", &(g_Header[0]), inifile);	// Save this value back to the INI file.
 		break;
 	case 'I': // III or I2
 		// I20xnnmm
@@ -506,7 +506,7 @@ static int vbit_command(char *Line)
 		ptr=&Line[2];
 		if (!*ptr)
 		{
-			xprintf(PSTR("%s\n\r"),pageFilter);
+			sprintf_P(str,PSTR("%s\n\r"),pageFilter);
 			break;
 		}
 		dest=pageFilter;
@@ -540,7 +540,8 @@ static int vbit_command(char *Line)
 		*dest=0;	// terminate the string
 		// TODO: Find out how many pages are in this page range
 		pagecount=FindPageCount();
-		xprintf(PSTR("%d"),pagecount); // Where nnn is the number of pages in this filter.
+		sprintf_P(str,PSTR("00%04d"),pagecount); // Where nnn is the number of pages in this filter. 099 is a filler ack and checksum 
+		// str[0]=0;
 		break;
 	case 'Q' : // QO, QM
 		if (Line[2]=='M') // QMnn
@@ -667,7 +668,7 @@ static int vbit_command(char *Line)
 	case 'X':	/* X - Exit */
 		return 2;	
 	case 'Y': /* Y - Version. Y2 should return a date string */
-		strcpy_P(str,PSTR("VBIT620 Version 0.01\n"));
+		strcpy_P(str,PSTR("0VBIT620 Version 0.01\n"));
 		break;		
 	case '?' :; // Status TODO
 		xprintf(PSTR("STATUS %02X\n\r"),statusI2C);
@@ -686,7 +687,7 @@ static int vbit_command(char *Line)
 		xputs(PSTR("Unknown command\n"));
 		returncode=1;
 	}
-	xprintf(PSTR("%d%s\n"),returncode,str);
+	xprintf(PSTR("0%s%1d\r"),str,returncode); // always add address 0.
 	return 0;
 }
 
@@ -698,7 +699,7 @@ int LoadINISettings(void)
 	int n;
 	n = ini_gets("service", "outputodd",  "111Q2233P44556678Q", &(g_OutputActions[0][0]), 18, inifile);	
 	n = ini_gets("service", "outputeven", "111Q2233P44556678Q", &(g_OutputActions[1][0]), 18, inifile);	
-	n = ini_gets("service", "header",     "mpp MRG DAY dd MTH", g_Header, 24, inifile);
+	n = ini_gets("service", "header",     "mpp MRG DAY dd MTH", g_Header, 32, inifile);
 	return 0; // TODO: Return success or otherwise
 }
 
@@ -728,7 +729,7 @@ int RunVBIT(void)
 	InitDataBroadcast();
 	for (;;)
 	{
-		xputc('>');
+		// xputc('>'); // no room for a prompt
 		get_line((char*)Line, sizeof(Line));
 		if (vbit_command((char*)Line)==2) break;
 	}

@@ -61,7 +61,6 @@
 /*
 #include "../RTC/rtc.h"
 */
-
 /* Command mode */
 #define CMD_MODE_NONE  0
 #define CMD_MODE_READ  1
@@ -103,6 +102,7 @@ _INLINE_ void GPIO_Off(uint8_t gpiobits)
 
 #define NDEBUG
 
+extern char g_Header[32];
 	
 
 /** ************** Typedefs ************** **/
