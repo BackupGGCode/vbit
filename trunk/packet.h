@@ -111,7 +111,7 @@ void FillFIFO(void);
 
 /// Dataline Output Actions array. 
 extern char g_OutputActions[2][18];
-extern char g_Header[26];
+extern char g_Header[32];
 
 extern void put_rc (FRESULT rc);
 extern FATFS Fatfs[1];

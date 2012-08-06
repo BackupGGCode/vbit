@@ -62,7 +62,7 @@ static unsigned char state[8]={0,0,0,0,0,0,0,0};
 #define VBILINES	17
 
 char g_OutputActions[2][18];
-char g_Header[26];
+char g_Header[32];
 
 int OptRelays;			/** Holds the current state of the opt out relay signals */
 
@@ -169,8 +169,8 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 {
 	char *p;
 	char ch;
+	int i,j;
 	static int lastsec;
-//	char date[10]; TODO: Implement something convincing
 	// BEGIN: Special effect. Go to page 100 and press Button 1.
 	// Every page becomes P100.
 	if (BUTTON_GetStatus(BUTTON_1))
@@ -192,16 +192,16 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 	packet[10]=HamTab[(subcode&0x03)]; // S4 TBA C6, C5
 	packet[11]=HamTab[0]; // TBA C7 to C10
 	packet[12]=HamTab[0]; // TBA C11 to C14 (0=parallel & language 0 (English))
-	strncpy(&packet[13],caption,24); // This is dangerously out of order! Need to range check and fill as needed
+	strncpy(&packet[13],caption,32); // This is dangerously out of order! Need to range check and fill as needed
 	// Stuff the page number in. TODO: make it work with hex numbers etc.
 	p=strstr(packet,"mpp"); 
 	if (p) // if we have mpp, replace it with the actual page number...
 	{
 		*p++=mag+'0';
-		ch=page>>4; // page tens
-		*p++=ch+(ch>9?'A':'0');
+		ch=page>>4; // page tens (note wacky way of converting digit to hex)
+		*p++=ch+(ch>9?'7':'0');
 		ch=page%0x10; // page units
-		*p++=ch+(ch>9?'A':'0');
+		*p++=ch+(ch>9?'7':'0');
 	}
 	// xputc(packet[20]); // Echo the mag for debugging
 	// Stick the time in. Need to implement flexible date/time formatting
@@ -214,15 +214,24 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 	//	xprintf(PSTR("%02d:%02d.%02d "),hour,min,sec);
 	lastsec=sec;
 	//sprintf(&packet[37],"%02d:%02d.%02d",hour,min,sec);
-	packet[37]='0'+hour/10; // grrr. Stupid sprintf breaking the CLI
-	packet[38]='0'+hour%10;
-	packet[39]=':';
-	packet[40]='0'+min/10;
-	packet[41]='0'+min%10;
-	packet[42]='.';
-	packet[43]='0'+sec/10;
-	packet[44]='0'+sec%10;
-
+	
+	// Format the time string in the last 8 characters of the heading
+	j=0;
+	for (i=37;i<=44;i++)
+	{
+		if (packet[i]=='0')
+		{
+			switch (j++)
+			{
+			case 0:packet[i]+=hour/10;break;
+			case 1:packet[i]+=hour%10;break;
+			case 2:packet[i]+= min/10;break;
+			case 3:packet[i]+= min%10;break;
+			case 4:packet[i]+= sec/10;break;
+			case 5:packet[i]+= sec%10;break;
+			}
+		}
+	}
 	Parity(packet,13);		
 } // Header
 
