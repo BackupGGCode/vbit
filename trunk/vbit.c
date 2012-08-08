@@ -39,6 +39,8 @@ static unsigned char statusFIFO;
 static unsigned char statusDisk;
 
 static char pageFilter[6]; 
+static uint16_t LastEntry;// last entry in a directory listing (DF and D+ commands)
+
 /** pageFilterToArray
  *  Takes the page filter and finds the page array index
  * \param if high is set, it converts * to the high value.
@@ -79,6 +81,24 @@ uint16_t pageFilterToArray(uint8_t high)
 	sscanf(value,"%3X",&result);
 	return result+result; // Because the page array has 2 byte cells	
 } // pageFilterToArray
+
+/** Directory first. This also initialises the directory iterator
+ * returns the index to an item in the page array. This is the first page that the filter selects.
+ */
+ uint16_t DirectoryFirst(void)
+ {
+	LastEntry=pageFilterToArray(1);	// The last value
+	return pageFilterToArray(0);	// The first value
+ }
+ 
+ /** Call this after calling Directory first.
+  *  Call until the return value indicates the end of directory list.
+  * [which is yet to be defined]
+  */
+ uint16_t DirectoryNext(void)
+ {
+ }
+
 
 void testIni(void)
 {
@@ -392,6 +412,11 @@ static int vbit_command(char *Line)
 		for (i=1;i<=1;i++) // TODO: Do we need more lists? Probably can find a way around it.
 			SDCreateLists(i,pagecount);
 		sei();
+		break;
+	case 'D': // Directory - D[<F|L>][<+|->][<n>]
+		// Where F=first, L=Last, +=next, -=prev, n=number of pages to step (default 1)
+		xprintf(PSTR("D Command needs to be written"));
+		// For each character, test for characters in the set FL+-<0..9> and act accordingly
 		break;
 	case 'E' : // EO, ES, EN, EP, EL, EM - examine 
 		switch (Line[2])
