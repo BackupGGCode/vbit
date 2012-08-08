@@ -38,9 +38,11 @@ static unsigned char statusVBI;
 static unsigned char statusFIFO;
 static unsigned char statusDisk;
 
+static uint8_t echoMode;
+
 static char pageFilter[6]; 
 static uint16_t LastEntry;// last entry in a directory listing (DF and D+ commands)
-
+static uint16_t currentPage; // The current page being iterated
 /** pageFilterToArray
  *  Takes the page filter and finds the page array index
  * \param if high is set, it converts * to the high value.
@@ -88,7 +90,16 @@ uint16_t pageFilterToArray(uint8_t high)
  uint16_t DirectoryFirst(void)
  {
 	LastEntry=pageFilterToArray(1);	// The last value
-	return pageFilterToArray(0);	// The first value
+	currentPage=pageFilterToArray(0);
+	return currentPage;			// The first value
+ }
+/** Directory last. This also initialises the directory iterator
+ * returns the index to an item in the page array. This is the first page that the filter selects.
+ */
+ uint16_t DirectoryLast(void)
+ {
+	currentPage=LastEntry=pageFilterToArray(1);	// The last value
+	return LastEntry;
  }
  
  /** Call this after calling Directory first.
@@ -97,6 +108,18 @@ uint16_t pageFilterToArray(uint8_t high)
   */
  uint16_t DirectoryNext(void)
  {
+	// TODO: What we should do is skip all empty page slots
+	// TODO: We also need to increment by amounts other than 2.
+	if (currentPage<=LastEntry)
+		currentPage+=2;	// TODO: Store this up in case a number parameter comes next
+	return currentPage;
+ }
+ uint16_t DirectoryPrev(void)
+ {
+	// TODO: What we should do is skip all empty page slots
+	// TODO: We also need to increment by amounts other than 2.
+	currentPage-=2;	// TODO: Limit this to the start of the page filter
+	return currentPage;
  }
 
 
@@ -169,7 +192,7 @@ void testIni(void)
 }
 
 /* A line starts with <ctrl-n>0 and ends with \r 
-Assume echo mode is always on, but can add it later.
+Default to echo mode off.
 This code pinched from SD_Card_Demo
 */
 static void get_line (char *buff, int len)
@@ -179,7 +202,8 @@ static void get_line (char *buff, int len)
 	
 	unsigned char started=0;
 
-	for (;;) {
+	for (;;)
+	{
 		while (!USB_Serial_GetNB(&c)) // Any characters?
 			if (vbiDone) // do the next field?
 			{			
@@ -189,20 +213,23 @@ static void get_line (char *buff, int len)
 		if (c == '\r') break;
 		if ((c == '\b') && idx) {
 			idx--;
-			USB_Serial_Send(c);
+			if (echoMode & 0x01) USB_Serial_Send(c);
 		}
 
 		if (started && ((unsigned char)c >= ' ') && (idx < len - 1)) {
 			buff[idx++] = c;
-			USB_Serial_Send(c);
+			if (echoMode & 0x01) USB_Serial_Send(c);
 		}
 		if (c==0x0e) started=1;
 
 	}
 	buff[idx] = 0;
-	USB_Serial_Send(c);
-	USB_Serial_Send('\n');
-}
+	if (echoMode & 0x01) 
+	{
+		USB_Serial_Send(c);
+		USB_Serial_Send('\n');
+	}
+} // get_line
 
 /** Test that page sequencing is working
  */
@@ -263,7 +290,7 @@ static void report(uint8_t ok)
 } // report
 
 /** Given the page count string in pageFilter
- * \return The page count in that range.
+ * \return The page count in that range. Or -1, if specific page (no wildcards) doesn't exist.
  */
 int FindPageCount(void)
 {
@@ -273,8 +300,9 @@ int FindPageCount(void)
 	unsigned int high,low;
 	uint16_t i; // Don't insert more than 64k pages!!!
 	NODEPTR np;
-	uint16_t pageCount;
+	int pageCount;
 	uint16_t addr;
+	uint8_t hasRange=0;	// There is a wildcarded range (used to signal an empty slot!)
 	// Scan the pageFilter string, making a high and low bound value
 	for (i=0;i<3;i++)
 	{
@@ -282,6 +310,7 @@ int FindPageCount(void)
 		if (i==0 && ch!='*') ch--; // because mag 1..8 maps to 0..7 in the page array
 		if (ch=='*')
 		{
+			hasRange=true;	// Not a unique page, but instead a range
 			switch (i) // Set high/low bounds
 			{
 			case 0: // mag
@@ -318,12 +347,23 @@ int FindPageCount(void)
 	//xprintf(PSTR("%s - From %5X to %5X\n\r"),pageFilter,low,high);
 	pageCount=0;
 	// Iterate looking through the page array for pages.
-	for (i=low;i<high;i++)
+	if (hasRange)
 	{
-		addr=i+i;
-		np=GetNodePtr(&addr);
-		if (np!=NULLPTR)
-			pageCount++;
+		for (i=low;i<high;i++)
+		{
+			addr=i+i;
+			np=GetNodePtr(&addr);
+			if (np!=NULLPTR)
+				pageCount++;
+		}
+	}
+	else
+	{
+		addr=low+low;
+		if (GetNodePtr(&addr)==NULLPTR)
+			pageCount=-1;	// page doesn't exist
+		else
+			pageCount=1;	// page exists
 	}
 	return pageCount;
 } // FindPageCount
@@ -368,13 +408,14 @@ void dumpPage(void)
 /* Command interpreter for VBIT,
 	The leading SO and trailing carriage return are already removed
 	The X command returns 2
-	Other good commands return 0 and bad commands return 1
+	Other good commands return 0 and bad commands return 1.
+	Also after a P command if selecting a single page fails, the page is created and 8 is the return code 
 	*/
 static int vbit_command(char *Line)
 {
 	unsigned char rwmode;
 	unsigned char returncode=0;
-	unsigned int pagecount;
+	int pagecount;
 	char ch;
 	unsigned char valid;
 	long n;
@@ -416,6 +457,39 @@ static int vbit_command(char *Line)
 	case 'D': // Directory - D[<F|L>][<+|->][<n>]
 		// Where F=first, L=Last, +=next, -=prev, n=number of pages to step (default 1)
 		xprintf(PSTR("D Command needs to be written"));
+		for (i=2;Line[i];i++)
+		{
+			ch=Line[i];
+			xprintf(PSTR("Processing Line[%d]=%c\n\r"),i,Line[i]);
+			switch (ch)
+			{
+			case 'F' : ; // Set the first item
+				DirectoryFirst();
+				break;
+			case 'L' : ; // Set the last item
+				DirectoryLast();
+				break;
+			case '+' : ; // Next item
+				DirectoryNext();
+				// xprintf(PSTR("D+ not implemented"));
+				break;
+			case '-' : ; // Previous item
+				// TODO: Limit this so we don't go past the page filter start
+				DirectoryPrev();
+				currentPage-=2;
+				// xprintf(PSTR("D- not implemented"));
+				break;
+			default: // Number of steps
+				if (ch>='0' && ch <='9')
+				{
+					ch-='0';
+					// TODO: Save the step size now
+				}
+			}
+			//TODO: What about end of page list?
+			// currentPage is a page index, and so it is 2 byte pairs starting from 0x100
+			xprintf(PSTR("%02X %03X 00 0000 0000 0 00000000"),3,0x100+(currentPage/2));
+		}
 		// For each character, test for characters in the set FL+-<0..9> and act accordingly
 		break;
 	case 'E' : // EO, ES, EN, EP, EL, EM - examine 
@@ -520,6 +594,12 @@ static int vbit_command(char *Line)
 			xprintf(PSTR("Done\n"));
 		}		
 		break;
+	case 'M': // MD - Delete all the pages selected by the last P command.
+		xprintf(PSTR("Delete...\n"));
+		// Iterate down all the pages
+		// Traverse down subpages and release nodes
+		// Go into the pages index and null out the entries in pages.idx
+		break;
 	case 'O':	/* O - Opt out. Example: O1c*/
 		/* Two digit hex number. Only 6 bits are used so the valid range is 0..3f */
 			ptr=&Line[0];
@@ -565,7 +645,14 @@ static int vbit_command(char *Line)
 		*dest=0;	// terminate the string
 		// TODO: Find out how many pages are in this page range
 		pagecount=FindPageCount();
-		sprintf_P(str,PSTR("00%04d"),pagecount); // Where nnn is the number of pages in this filter. 099 is a filler ack and checksum 
+		if (pagecount<0)
+		{
+			pagecount=1;
+			returncode=8;
+			// TODO: At this point we must create the page, as we are about to receive the contents.
+			xprintf(PSTR("Page has been created. Please send some data to fill the page\n\r"));
+		}
+		sprintf_P(str,PSTR("%04d"),pagecount); // Where nnn is the number of pages in this filter. 099 is a filler ack and checksum 
 		// str[0]=0;
 		break;
 	case 'Q' : // QO, QM
@@ -666,6 +753,18 @@ static int vbit_command(char *Line)
 	case 'U': // TEST
 		Init830F1();
 		break;
+	case 'V': // Communication settings. 2 hex chars (bit=(on/off) 7=Viewdata/Text 1=CRLF/CR 0=Echo/Silent
+		// VBIT seems a bit fussy. When using TED Scheduler it is best to sat V00
+		pagecount=sscanf(&(Line[2]),"%2X",&i);
+		// xprintf(PSTR("sscanf returns %d. Parameter is %X0\n\r"),pagecount,i);
+		if (pagecount>0)
+		{
+			echoMode=i;		// Yes, it was OK
+			// TODO: Save the result in the INI
+		}
+		else
+			returncode=1;	// No, it failed
+		break;
 	case 'W': // TEST Ad-tec opt outs
 		// W14 - Send a mode 14 opt out
 		// We want to be able to test various ATP950 modes.
@@ -693,7 +792,7 @@ static int vbit_command(char *Line)
 	case 'X':	/* X - Exit */
 		return 2;	
 	case 'Y': /* Y - Version. Y2 should return a date string */
-		strcpy_P(str,PSTR("0VBIT620 Version 0.01\n"));
+		strcpy_P(str,PSTR("VBIT620 Version 0.02"));
 		break;		
 	case '?' :; // Status TODO
 		xprintf(PSTR("STATUS %02X\n\r"),statusI2C);
@@ -712,7 +811,7 @@ static int vbit_command(char *Line)
 		xputs(PSTR("Unknown command\n"));
 		returncode=1;
 	}
-	xprintf(PSTR("0%s%1d\r"),str,returncode); // always add address 0.
+	xprintf(PSTR("0%d%s0\r"),returncode,str); // always add address 0.
 	return 0;
 }
 
