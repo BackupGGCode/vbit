@@ -95,6 +95,7 @@
  } // SetNodePtr
  
  /* Fetch a node from the PageArray in serial ram
+  * The address should be calculated like this: cellAddress=((mag<<8)+page)*sizeof(NODEPTR);
   */ 
  NODEPTR GetNodePtr(uint16_t *addr)
  {
