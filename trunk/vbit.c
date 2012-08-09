@@ -41,8 +41,10 @@ static unsigned char statusDisk;
 static uint8_t echoMode;
 
 static char pageFilter[6]; 
+// Variables to do with stepping through the directory
 static uint16_t LastEntry;// last entry in a directory listing (DF and D+ commands)
 static uint16_t currentPage; // The current page being iterated
+
 /** pageFilterToArray
  *  Takes the page filter and finds the page array index
  * \param if high is set, it converts * to the high value.
@@ -416,6 +418,8 @@ static int vbit_command(char *Line)
 	unsigned char rwmode;
 	unsigned char returncode=0;
 	int pagecount;
+	uint8_t directorySteps;
+	int8_t sign; // 1=plus -1=minus
 	char ch;
 	unsigned char valid;
 	long n;
@@ -457,6 +461,8 @@ static int vbit_command(char *Line)
 	case 'D': // Directory - D[<F|L>][<+|->][<n>]
 		// Where F=first, L=Last, +=next, -=prev, n=number of pages to step (default 1)
 		xprintf(PSTR("D Command needs to be written"));
+		directorySteps=0;
+		sign=1;
 		for (i=2;Line[i];i++)
 		{
 			ch=Line[i];
@@ -471,23 +477,35 @@ static int vbit_command(char *Line)
 				break;
 			case '+' : ; // Next item
 				DirectoryNext();
+				directorySteps=1;
+				sign=1;
 				// xprintf(PSTR("D+ not implemented"));
 				break;
 			case '-' : ; // Previous item
 				// TODO: Limit this so we don't go past the page filter start
 				DirectoryPrev();
-				currentPage-=2;
+				directorySteps=1;
+				sign=-1;
 				// xprintf(PSTR("D- not implemented"));
 				break;
 			default: // Number of steps
 				if (ch>='0' && ch <='9')
 				{
 					ch-='0';
-					// TODO: Save the step size now
+					if (directorySteps>=0)	// Assume +
+						directorySteps=ch;
+					else
+						directorySteps=-ch; // otherwise -
 				}
+				Line[i]=0;// Force this to be the last option
+				break;	// Break because this must be the last option
 			}
 			//TODO: What about end of page list?
 			// currentPage is a page index, and so it is 2 byte pairs starting from 0x100
+			//TODO: Skip blank pages
+			GetNodePtr(&currentPage); // TODO: use the value coming back to access the page parameters
+			currentPage+=(directorySteps+directorySteps);
+			
 			xprintf(PSTR("%02X %03X 00 0000 0000 0 00000000"),3,0x100+(currentPage/2));
 		}
 		// For each character, test for characters in the set FL+-<0..9> and act accordingly
