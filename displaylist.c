@@ -95,7 +95,7 @@
  } // SetNodePtr
  
  /* Fetch a node from the PageArray in serial ram
-  * The address should be calculated like this: cellAddress=((mag<<8)+page)*sizeof(NODEPTR);
+  * The address should be calculated like this: cellAddress=(((mag-1)<<8)+page)*sizeof(NODEPTR);
   */ 
  NODEPTR GetNodePtr(uint16_t *addr)
  {
@@ -104,7 +104,7 @@
 	SetSPIRamAddress(SPIRAM_READ, *addr); // Set the address
 	ReadSPIRam((char *)&nodeptr, sizeof(NODEPTR)); // Read data
 	DeselectSPIRam();
-	// xprintf(PSTR("[GetNodePtr] returns nodeptr=%d\n\r"),nodeptr);
+	//xprintf(PSTR("[GetNodePtr] returns nodeptr=%d\n\r"),nodeptr);
 	return nodeptr;
  } // GetNodePtr
  

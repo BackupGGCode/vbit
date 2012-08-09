@@ -42,6 +42,7 @@ static uint8_t echoMode;
 
 static char pageFilter[6]; 
 // Variables to do with stepping through the directory
+static uint16_t FirstEntry;// last entry in a directory listing (DF and D+ commands)
 static uint16_t LastEntry;// last entry in a directory listing (DF and D+ commands)
 static uint16_t currentPage; // The current page being iterated
 
@@ -93,6 +94,7 @@ uint16_t pageFilterToArray(uint8_t high)
  {
 	LastEntry=pageFilterToArray(1);	// The last value
 	currentPage=pageFilterToArray(0);
+	FirstEntry=currentPage;
 	return currentPage;			// The first value
  }
 /** Directory last. This also initialises the directory iterator
@@ -104,26 +106,55 @@ uint16_t pageFilterToArray(uint8_t high)
 	return LastEntry;
  }
  
- /** Call this after calling Directory first.
-  *  Call until the return value indicates the end of directory list.
-  * [which is yet to be defined]
-  */
- uint16_t DirectoryNext(void)
- {
+/** Call this after calling Directory first.
+ *  Call until the return value indicates the end of directory list.
+ * [which is yet to be defined]
+ */
+uint16_t DirectoryNext(void)
+{
 	// TODO: What we should do is skip all empty page slots
 	// TODO: We also need to increment by amounts other than 2.
 	if (currentPage<=LastEntry)
 		currentPage+=2;	// TODO: Store this up in case a number parameter comes next
 	return currentPage;
- }
- uint16_t DirectoryPrev(void)
- {
+}
+uint16_t DirectoryPrev(void)
+{
 	// TODO: What we should do is skip all empty page slots
 	// TODO: We also need to increment by amounts other than 2.
 	currentPage-=2;	// TODO: Limit this to the start of the page filter
-	return currentPage;
- }
+	return currentPage;}
 
+
+/** Give the currentPage and a step value, iterates to find the page.
+ * This is to implement the DF/DL/D+/D-
+ * \param step - Number of pages to step
+ */
+uint16_t LocatePage(int8_t step)
+{
+	uint16_t stepCount;
+	NODEPTR np;
+	if (step==0)	// We didn't iterate. Just return the page that we are on
+		return currentPage;
+	if (step>0)
+		stepCount=step;
+	else
+		stepCount=-step;
+	while (stepCount)
+	{
+		if (step>0)		// Iterate
+			currentPage+=2;
+		else
+			currentPage-=2;
+		np=GetNodePtr(&currentPage);	// Get the current page
+		if (np!=NULLPTR)			// Only count actual pages
+			stepCount--;			// If there is a page, then count it
+		// If we hit the page filter limits we return failure
+		if (currentPage<=FirstEntry || currentPage>=LastEntry)
+			return NULLPTR;
+	}
+	return currentPage;
+} // LocatePage
 
 void testIni(void)
 {
@@ -460,7 +491,7 @@ static int vbit_command(char *Line)
 		break;
 	case 'D': // Directory - D[<F|L>][<+|->][<n>]
 		// Where F=first, L=Last, +=next, -=prev, n=number of pages to step (default 1)
-		xprintf(PSTR("D Command needs to be written"));
+		//xprintf(PSTR("D Command needs to be written"));
 		directorySteps=0;
 		sign=1;
 		for (i=2;Line[i];i++)
@@ -476,36 +507,31 @@ static int vbit_command(char *Line)
 				DirectoryLast();
 				break;
 			case '+' : ; // Next item
-				DirectoryNext();
 				directorySteps=1;
 				sign=1;
 				// xprintf(PSTR("D+ not implemented"));
 				break;
 			case '-' : ; // Previous item
-				// TODO: Limit this so we don't go past the page filter start
-				DirectoryPrev();
 				directorySteps=1;
 				sign=-1;
 				// xprintf(PSTR("D- not implemented"));
 				break;
-			default: // Number of steps
+			default: // Number of steps (TODO: Extend to a generic decimal)
 				if (ch>='0' && ch <='9')
 				{
-					ch-='0';
-					if (directorySteps>=0)	// Assume +
-						directorySteps=ch;
-					else
-						directorySteps=-ch; // otherwise -
+					directorySteps=ch;
 				}
 				Line[i]=0;// Force this to be the last option
 				break;	// Break because this must be the last option
 			}
-			//TODO: What about end of page list?
-			// currentPage is a page index, and so it is 2 byte pairs starting from 0x100
-			//TODO: Skip blank pages
-			GetNodePtr(&currentPage); // TODO: use the value coming back to access the page parameters
-			currentPage+=(directorySteps+directorySteps);
-			
+			// Find the page
+			if (LocatePage(directorySteps*sign)==NULLPTR)
+			{
+				// Probably want to set an error value as we failed to iterate
+				// But I don't think that we return anything different.
+				// We rely on TED scheduler to remember the count returned by the P command and NOT overrun
+			}
+			// TODO: Work out what to do with the rest of the parameters
 			xprintf(PSTR("%02X %03X 00 0000 0000 0 00000000"),3,0x100+(currentPage/2));
 		}
 		// For each character, test for characters in the set FL+-<0..9> and act accordingly
