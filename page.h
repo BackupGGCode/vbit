@@ -32,7 +32,7 @@
  */
 typedef struct _PAGE_ 
 {
-	char filename[80]; /// May need to cut this down
+	char filename[40]; /// May need to cut this down
 	unsigned char mag;		/// 1..8 magazine number
 	unsigned char page;		/// 00..99 page number
 	unsigned char subpage;	/// 00..99 (not part of ETSI spec)

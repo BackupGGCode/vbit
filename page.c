@@ -52,7 +52,7 @@ unsigned char ParseLine(PAGE *page, char *str)
 	// xprintf(PSTR("%s\n"),str);
 	if (str[2]!=',')
 	{
-		xprintf(PSTR("[Parse page]Bad format\n"));
+		xprintf(PSTR("[Parse line]Bad format\n"));
 		return 1;
 	}
 	switch (str[0])
