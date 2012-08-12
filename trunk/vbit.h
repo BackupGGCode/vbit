@@ -103,7 +103,7 @@ _INLINE_ void GPIO_Off(uint8_t gpiobits)
 #define NDEBUG
 
 extern char g_Header[32];
-	
+extern FIL PageF;		// For misc. file accessing. Watch out! This is a big chunk of memory
 
 /** ************** Typedefs ************** **/
 

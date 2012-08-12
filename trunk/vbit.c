@@ -46,6 +46,9 @@ static uint16_t FirstEntry;// last entry in a directory listing (DF and D+ comma
 static uint16_t LastEntry;// last entry in a directory listing (DF and D+ commands)
 static uint16_t currentPage; // The current page being iterated
 
+FIL PageF;	// A file object if we need one outside of inserting.	
+
+
 /** pageFilterToArray
  *  Takes the page filter and finds the page array index
  * \param if high is set, it converts * to the high value.
@@ -133,25 +136,32 @@ uint16_t DirectoryPrev(void)
 uint16_t LocatePage(int8_t step)
 {
 	uint16_t stepCount;
+	uint16_t saveCurrent;
 	NODEPTR np;
+	saveCurrent=currentPage;
 	if (step==0)	// We didn't iterate. Just return the page that we are on
 		return currentPage;
-	if (step>0)
+	if (step>0)	// stepcount=abs(step)
 		stepCount=step;
 	else
 		stepCount=-step;
 	while (stepCount)
 	{
+		// If we hit the page filter limits we return failure. (Actually return the page that we entered with)
+		if ((currentPage+step)<FirstEntry || (currentPage+step)>LastEntry)
+		{
+			currentPage=saveCurrent;	// Revert currentPage
+			return NULLPTR;
+		}
 		if (step>0)		// Iterate
 			currentPage+=2;
 		else
 			currentPage-=2;
 		np=GetNodePtr(&currentPage);	// Get the current page
 		if (np!=NULLPTR)			// Only count actual pages
+		{
 			stepCount--;			// If there is a page, then count it
-		// If we hit the page filter limits we return failure
-		if (currentPage<=FirstEntry || currentPage>=LastEntry)
-			return NULLPTR;
+		}
 	}
 	return currentPage;
 } // LocatePage
@@ -461,6 +471,16 @@ static int vbit_command(char *Line)
 	str[0]='O';
 	str[1]='K';
 	str[2]='\0';
+	// char data[80];
+	
+	// This stuff is to do with locating pages in the display list
+	NODEPTR np;
+	DISPLAYNODE node;
+	PAGEINDEXRECORD ixRec;
+	uint16_t charcount;	
+	uint8_t res;
+	DWORD fileptr;		// Used to save the file pointer to the body of the ttx file	
+	PAGE page;
 	// Read, Update or not
 	switch (Line[2])
 	{
@@ -492,12 +512,15 @@ static int vbit_command(char *Line)
 	case 'D': // Directory - D[<F|L>][<+|->][<n>]
 		// Where F=first, L=Last, +=next, -=prev, n=number of pages to step (default 1)
 		//xprintf(PSTR("D Command needs to be written"));
+		// It would probably be a good idea to save the seek pointer
+		// do the reading required
+		// and then reset it. This would save memory.
 		directorySteps=0;
 		sign=1;
 		for (i=2;Line[i];i++)
 		{
 			ch=Line[i];
-			xprintf(PSTR("Processing Line[%d]=%c\n\r"),i,Line[i]);
+			// xprintf(PSTR("Processing Line[%d]=%c\n\r"),i,Line[i]);
 			switch (ch)
 			{
 			case 'F' : ; // Set the first item
@@ -532,9 +555,45 @@ static int vbit_command(char *Line)
 				// We rely on TED scheduler to remember the count returned by the P command and NOT overrun
 			}
 			// TODO: Work out what to do with the rest of the parameters
-			xprintf(PSTR("%02X %03X 00 0000 0000 0 00000000"),3,0x100+(currentPage/2));
+			np=GetNodePtr(&currentPage);
+			// TODO: Handle sub pages
+			GetNode(&node,np);
+			// Instead treat the page like a single page
+			f_lseek(&listFIL,(node.pageindex)*sizeof(PAGEINDEXRECORD));	// Seek the page index
+			f_read(&listFIL,&ixRec,sizeof(PAGEINDEXRECORD),&charcount);	// and read it	
+			// Now seek the actual page that we are referencing
+			res=f_open(&PageF,"pages.all",FA_READ);					// Now look for the relevant page
+			f_lseek(&PageF,ixRec.seekptr);	// Seek the actual page
+			// Now we have the page, we need to seek through it to get
+			// the data
+			while (PageF.fptr<(ixRec.seekptr+ixRec.pagesize))
+			{
+				fileptr=PageF.fptr;		// Save the file pointer in case we found "OL"
+				f_gets(str,sizeof(str),&PageF);
+				if (str[0]=='O' && str[1]=='L')
+				{
+					f_lseek (&PageF, fileptr);	// Step back to the OL line
+					break;
+				}
+				if (ParseLine(&page, str))
+				{
+					xprintf(PSTR("[insert]file error handler needed:%s\n"),str);
+					// At this point we are stuffed.
+					break; // what else should we do if we get here?
+				}
+			}	
+			// bb mpp qq cc tttt ssss n xxxxxxx
+			// Leading zeros rely on PRINTF_LIB_FLOAT in makefile!!!
+			sprintf_P(str,PSTR("%02X %03X %02d %02X %04X 0000 %1d 00000000"),
+			3, // seconds (hex)
+			0x100+(currentPage/2), // mpp
+			page.subpage, // ss
+			page.control, // S
+			page.time,  // Cycle time (secs)
+			(currentPage>>8)+1); // Mag
+			f_close(&PageF);
 		}
-		// For each character, test for characters in the set FL+-<0..9> and act accordingly
+		// str[0]=0;	// might return the directory paramaters here
 		break;
 	case 'E' : // EO, ES, EN, EP, EL, EM - examine 
 		switch (Line[2])
@@ -855,7 +914,7 @@ static int vbit_command(char *Line)
 		xputs(PSTR("Unknown command\n"));
 		returncode=1;
 	}
-	xprintf(PSTR("0%d%s0\r"),returncode,str); // always add address 0.
+	xprintf(PSTR("%d%s0\r"),returncode,str); // always add address 0.
 	return 0;
 }
 
