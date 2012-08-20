@@ -619,6 +619,26 @@ static int vbit_command(char *Line)
 			break;
 		}		
 		break; // E commands
+	case 'e' : // ea or ee : Upload page(s)
+		switch (Line[2])
+		{
+		case 'a' : // Add a page, line at a time.
+			// If this is the first call we need to seek the end of pages.all
+			// First time, clear out a Page object.
+			// Need to parse the page as we copy it so we know where to put it in the array/node
+			// And each call need to un-encode the data according to teletext mode (where \r is replaced by ctrl-p).
+			// Do we need to implement viewdata escapes?
+			break; // a
+		case 'e' : // End of adding a page
+			// We finished. End the update
+			// 1: Append pages.idx with the file start/end
+			// 2: Add the page to the page array.
+			// 3: Add the page to the node list.
+			break; // a
+		default:
+			returncode=1;
+		}
+		break; // e commands
 	case 'G': /* G - Packet 8/30 format 1 [p830f1]*/
 		if (rwmode==CMD_MODE_NONE)
 		{
@@ -697,6 +717,10 @@ static int vbit_command(char *Line)
 			xprintf(PSTR("Done\n"));
 		}		
 		break;
+	case 'L': // L<nn>,<line data>
+		xprintf(PSTR("L command not implemented. Use 'o'\n"));
+		returncode=1;
+		break;
 	case 'M': // MD - Delete all the pages selected by the last P command.
 		xprintf(PSTR("Delete...\n"));
 		// Iterate down all the pages
@@ -710,6 +734,13 @@ static int vbit_command(char *Line)
 			xatoi(&ptr,&n);
 			OptRelays=n & 0x3f;
 		break;		
+	case 'o': /* output page */
+		xprintf(PSTR("o - output page not defined"));
+		// How about: oa,<string>=send <string>, oe=end file
+		// oa,<string> - append string to the pages file. If this is the first line then record the seek address.
+		// We also need to grab the page parameters while we are at it
+		// oe - end the append - Write the pages.idx start/size entry. Also write the pageindex array and the node list.
+		break;
 	case 'P': // P<mppss>. An invalid character will set null. P without parameters will return the current value
 		ptr=&Line[2];
 		if (!*ptr)
