@@ -266,7 +266,8 @@ static void get_line (char *buff, int len)
 		if (c==0x0e) started=1;
 
 	}
-	buff[idx] = 0;
+	buff[idx++]='\r';	// Preserve the end of line
+	buff[idx] = 0;		// and cap it off
 	if (echoMode & 0x01) 
 	{
 		USB_Serial_Send(c);
@@ -456,6 +457,7 @@ void dumpPage(void)
 	*/
 static int vbit_command(char *Line)
 {
+	static uint8_t firstLine=true;
 	unsigned char rwmode;
 	unsigned char returncode=0;
 	int pagecount;
@@ -473,7 +475,8 @@ static int vbit_command(char *Line)
 	str[2]='\0';
 	// char data[80];
 	
-	// This stuff is to do with locating pages in the display list
+	// This stuff is to do with locating pages in the display list (Directory command)
+	// (also shared with ee/ea command for uploading pages)
 	NODEPTR np;
 	DISPLAYNODE node;
 	PAGEINDEXRECORD ixRec;
@@ -481,6 +484,9 @@ static int vbit_command(char *Line)
 	uint8_t res;
 	DWORD fileptr;		// Used to save the file pointer to the body of the ttx file	
 	PAGE page;
+	// ee/ea specific variable
+	// tba
+	
 	// Read, Update or not
 	switch (Line[2])
 	{
@@ -515,6 +521,12 @@ static int vbit_command(char *Line)
 		// It would probably be a good idea to save the seek pointer
 		// do the reading required
 		// and then reset it. This would save memory.
+		// If the ee command is active, don't allow D to mess the page variable.
+		if (firstLine)
+		{
+			returncode=1; // ee command is busy. 
+			break;
+		}
 		directorySteps=0;
 		sign=1;
 		for (i=2;Line[i];i++)
@@ -619,29 +631,46 @@ static int vbit_command(char *Line)
 			break;
 		}		
 		break; // E commands
-	case 'e' : // ea or ee : Upload page(s)
+	case 'e' : // ea or ee : Upload page(s). Warning. "page" is shared with the directory command
+		// directory calls are blocked until you do ee.
 		switch (Line[2])
 		{
 		case 'a' : // Add a page, line at a time.
-			// If this is the first call we need to seek the end of pages.all
-			// First time, clear out a Page object.
-			// Need to parse the page as we copy it so we know where to put it in the array/node
-			// And each call need to un-encode the data according to teletext mode (where \r is replaced by ctrl-p).
-			// Do we need to implement viewdata escapes?
+			if (firstLine)
+			{
+				firstLine=false;
+				ClearPage(&page); // Clear out our Page object
+				res=f_open(&PageF,"pages.all",FA_READ| FA_WRITE);	// Ready to write
+				// TODO: check the value of res
+				xprintf(PSTR("Size of pages.all=%d\n\r"),PageF.fsize);
+				/* Move to end of pages.all to append data */
+				res=f_lseek(&PageF, PageF.fsize);				
+			}
+			// Find the first comma. For now, assume it is Line[3]
+			// Find the terminator \r	
+			f_puts(Line[4],&PageF);			
+			// Don't unencode the line, pages.all should follow MRG \r => ctrl-P substitutions
+			// Probably can ignore Viewdata escapes.
+			// Write the rest of the line to pages.all
+			// Parse the line so we have all the page details so we know where to put it in the array/node
 			break; // a
 		case 'e' : // End of adding a page
 			// We finished. End the update
 			// 1: Append pages.idx with the file start/end
 			// 2: Add the page to the page array.
 			// 3: Add the page to the node list.
-			break; // a
+			firstLine=true;		// and reset ready for the next file
+			f_close(&PageF);
+			break; // e
 		default:
+			str[0]=0;
 			returncode=1;
 		}
 		break; // e commands
 	case 'G': /* G - Packet 8/30 format 1 [p830f1]*/
 		if (rwmode==CMD_MODE_NONE)
 		{
+			str[0]=0;
 			returncode=1;
 			break;
 		}
