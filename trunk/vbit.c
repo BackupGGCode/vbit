@@ -485,6 +485,9 @@ static int vbit_command(char *Line)
 	DWORD fileptr;		// Used to save the file pointer to the body of the ttx file	
 	PAGE page;
 	// ee/ea specific variable
+	static DWORD StartOfPage;
+	DWORD EndOfPage;	// Records the start and end of the new page
+	PAGEINDEXRECORD pageindex;
 	// tba
 	
 	// Read, Update or not
@@ -642,25 +645,38 @@ static int vbit_command(char *Line)
 				ClearPage(&page); // Clear out our Page object
 				res=f_open(&PageF,"pages.all",FA_READ| FA_WRITE);	// Ready to write
 				// TODO: check the value of res
-				xprintf(PSTR("Size of pages.all=%d\n\r"),PageF.fsize);
+				xprintf(PSTR("Size of pages.all=%ul\n\r"),PageF.fsize);
 				/* Move to end of pages.all to append data */
 				res=f_lseek(&PageF, PageF.fsize);				
+				xprintf(PSTR("lseek res=%d\n\r"),res);
+				StartOfPage=PageF.fptr;  // We need the Start Of Page for the index
 			}
-			// Find the first comma. For now, assume it is Line[3]
-			// Find the terminator \r	
-			f_puts(Line[4],&PageF);			
+			f_puts(&Line[4],&PageF);	// The rest of the line is the file contents
+			f_putc('\n',&PageF);	// Add the LF that the interpreter strips out			
+			xprintf(PSTR("Now writing:%s\n\r"),&Line[4]);
 			// Don't unencode the line, pages.all should follow MRG \r => ctrl-P substitutions
 			// Probably can ignore Viewdata escapes.
 			// Write the rest of the line to pages.all
 			// Parse the line so we have all the page details so we know where to put it in the array/node
+			if (ParseLine(&page, &Line[4]))
+			{
+				xprintf(PSTR("Your page sucks. Unable to parse this nonsense\n\r"));
+				returncode=1;	// failed
+				// TODO: implement the break
+				// break;
+			}
 			break; // a
 		case 'e' : // End of adding a page
 			// We finished. End the update
-			// 1: Append pages.idx with the file start/end
-			// 2: Add the page to the page array.
-			// 3: Add the page to the node list.
+			EndOfPage=PageF.fptr;
+			f_close(&PageF);		// We are done with pages.all
+			pageindex.seekptr=StartOfPage;
+			pageindex.pagesize=(uint16_t)(EndOfPage-StartOfPage);
+		    xprintf(PSTR("seek %ld size %d \n\r"),pageindex.seekptr,pageindex.pagesize);
+			// 1: Append pages.idx with the file start/end (append pageindex)
+			// 2: Add the page to the page array. (Or we could rebuild just by doing a restart)
+			// 3: Add the page to the node list.  (ditto)
 			firstLine=true;		// and reset ready for the next file
-			f_close(&PageF);
 			break; // e
 		default:
 			str[0]=0;

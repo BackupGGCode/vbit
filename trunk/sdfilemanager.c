@@ -114,7 +114,7 @@ void SDCreateLists(int mag, unsigned int pagecount)
 	res=f_open(&pageindex,"pages.idx",FA_CREATE_ALWAYS|FA_WRITE);
 	if (res)
 	{
-		f_close(&myfile); // Don't want this any more
+		f_close(&myfile); // Failed :-( Don't want this any more
 		f_close(&pagesfile);
 		xprintf(PSTR("[sdfilemanager]Epic Fail 1c\n"));			
 		put_rc(res);
