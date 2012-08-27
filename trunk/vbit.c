@@ -671,11 +671,19 @@ static int vbit_command(char *Line)
 			EndOfPage=PageF.fptr;
 			f_close(&PageF);		// We are done with pages.all
 			pageindex.seekptr=StartOfPage;
-			pageindex.pagesize=(uint16_t)(EndOfPage-StartOfPage);
+			pageindex.pagesize=(uint16_t)(EndOfPage-StartOfPage); // Warning! 16 bit file size limits to about 50 subpages.
 		    xprintf(PSTR("seek %ld size %d \n\r"),pageindex.seekptr,pageindex.pagesize);
 			// 1: Append pages.idx with the file start/end (append pageindex)
+			res=f_open(&PageF,"pages.idx",FA_READ| FA_WRITE);	// Ready to write // TODO: check the value of res
+			res=f_lseek(&PageF, PageF.fsize);	// Locate the end of the file
+			// Now append the page index
+			f_write(&PageF,&(pageindex.seekptr),4,&charcount);	// 4 byte seek pointer
+			f_write(&PageF,&(pageindex.pagesize),2,&charcount);	// 2 byte file size 			
+			f_close(&PageF);
 			// 2: Add the page to the page array. (Or we could rebuild just by doing a restart)
+			// TODO:
 			// 3: Add the page to the node list.  (ditto)
+			// TODO:
 			firstLine=true;		// and reset ready for the next file
 			break; // e
 		default:
@@ -734,6 +742,7 @@ static int vbit_command(char *Line)
 			i2c_init();			
 			break;
 		default:
+			str[0]=0;
 			returncode=1;	
 		}
 		break;
@@ -763,7 +772,10 @@ static int vbit_command(char *Line)
 		}		
 		break;
 	case 'L': // L<nn>,<line data>
-		xprintf(PSTR("L command not implemented. Use 'o'\n"));
+		// We don't use L in vbit. Because it would require RAM buffering or more file writing,
+		// instead we use the e command which writes the file directly.
+		xprintf(PSTR("L command not implemented. Use 'e'\n"));
+		str[0]=0;
 		returncode=1;
 		break;
 	case 'M': // MD - Delete all the pages selected by the last P command.
@@ -779,13 +791,6 @@ static int vbit_command(char *Line)
 			xatoi(&ptr,&n);
 			OptRelays=n & 0x3f;
 		break;		
-	case 'o': /* output page */
-		xprintf(PSTR("o - output page not defined"));
-		// How about: oa,<string>=send <string>, oe=end file
-		// oa,<string> - append string to the pages file. If this is the first line then record the seek address.
-		// We also need to grab the page parameters while we are at it
-		// oe - end the append - Write the pages.idx start/size entry. Also write the pageindex array and the node list.
-		break;
 	case 'P': // P<mppss>. An invalid character will set null. P without parameters will return the current value
 		ptr=&Line[2];
 		if (!*ptr)
