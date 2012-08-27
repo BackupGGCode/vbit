@@ -237,8 +237,13 @@ xprintf(PSTR("\n\r"));
 	// xprintf(PSTR("[LinkPage] Enters page ix=%d cell=%d\n\r"),ix,cellAddress);
 	np=GetNodePtr(&cellAddress);
 	// Is the cell empty?
-
-	if (np==NULLPTR)
+	
+	// HACK ALERT
+	// Last page in is the one that is displayed.
+	// WARNING: Multiple pages will cause pointers to be leaked.
+	// This won't work for sub pages.
+	// It needs to be worked on.
+	if (np==NULLPTR || true) // This forces the LAST page to be the one that goes to the output
 	{
 		// Yes!
 		newnodeptr=NewNode(); // Make a new node
