@@ -225,7 +225,7 @@ xprintf(PSTR("\n\r"));
   * \param mag - 1..8
   * \param page - pointer to a page structure.
   * \paran subpage - not yet implemented
-  * \param ix - Record number of page in page.idx
+  * \param ix - Record number of page in page.idx (not the address!)
   * \return Might be useful to return something 
   */
  void LinkPage(uint8_t mag, uint8_t page, uint8_t subpage, uint16_t ix)

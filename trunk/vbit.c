@@ -683,7 +683,9 @@ static int vbit_command(char *Line)
 			f_write(&PageF,&(pageindex.pagesize),2,&charcount);	// 2 byte file size 			
 			f_close(&PageF);
 			// 2: Add the page to the page array. (Or we could rebuild just by doing a restart)
-			LinkPage(page.mag, page.page, page.subcode, ix/sizeof(pageindex));
+			ix=ix/sizeof(pageindex);
+			xprintf(PSTR("New page mag=%d page=%02X --> added at ix=%d\n\r"),page.mag,page.page,ix);
+			LinkPage(page.mag, page.page, page.subcode, ix);
 			// TODO:
 			// 3: Add the page to the node list.  (ditto)
 			// TODO:

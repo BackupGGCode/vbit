@@ -49,6 +49,8 @@ typedef struct
 typedef struct
 {
 NODEPTR pageindex; // Not sure that this is a NODEPTR type but we can worry about that later
+// pageindex is an index to page.idx. It is either a file offset value for l_seek, or an index.
+// Which one is it?
 NODEPTR next;
 // uint8_t mag;	// 0..7 where 0 is mapped to 8. mag is implicit
 // uint8_t page;	// Page number 0x00 to 0xff
