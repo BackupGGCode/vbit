@@ -224,6 +224,8 @@ xprintf(PSTR("\n\r"));
  /** Insert a page into the display list
   * \param mag - 1..8
   * \param page - pointer to a page structure.
+  * \paran subpage - not yet implemented
+  * \param ix - Record number of page in page.idx
   * \return Might be useful to return something 
   */
  void LinkPage(uint8_t mag, uint8_t page, uint8_t subpage, uint16_t ix)
@@ -245,6 +247,7 @@ xprintf(PSTR("\n\r"));
 	// It needs to be worked on.
 	if (np==NULLPTR || true) // This forces the LAST page to be the one that goes to the output
 	{
+	// TODO: WHAT WE NEED TO DO HERE at the very least, is to reuse the old node if there was one.
 		// Yes!
 		newnodeptr=NewNode(); // Make a new node
 		SetNodePtr(newnodeptr,cellAddress); // Pop it into the PageArray

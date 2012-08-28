@@ -488,6 +488,7 @@ static int vbit_command(char *Line)
 	static DWORD StartOfPage;
 	DWORD EndOfPage;	// Records the start and end of the new page
 	PAGEINDEXRECORD pageindex;
+	uint16_t ix;	
 	// tba
 	
 	// Read, Update or not
@@ -666,21 +667,23 @@ static int vbit_command(char *Line)
 				// break;
 			}
 			break; // a
-		case 'e' : // End of adding a page
-			// We finished. End the update
+		case 'e' : // We finished. End the update
 			EndOfPage=PageF.fptr;
 			f_close(&PageF);		// We are done with pages.all
+			// Or are we all done? We need to write the page to Pmpp.TTI so that we can rebuild the index later
 			pageindex.seekptr=StartOfPage;
 			pageindex.pagesize=(uint16_t)(EndOfPage-StartOfPage); // Warning! 16 bit file size limits to about 50 subpages.
 		    xprintf(PSTR("seek %ld size %d \n\r"),pageindex.seekptr,pageindex.pagesize);
 			// 1: Append pages.idx with the file start/end (append pageindex)
 			res=f_open(&PageF,"pages.idx",FA_READ| FA_WRITE);	// Ready to write // TODO: check the value of res
-			res=f_lseek(&PageF, PageF.fsize);	// Locate the end of the file
+			ix=PageF.fsize;		// This is the address in the file
+			res=f_lseek(&PageF, ix);	// Locate the end of the file
 			// Now append the page index
 			f_write(&PageF,&(pageindex.seekptr),4,&charcount);	// 4 byte seek pointer
 			f_write(&PageF,&(pageindex.pagesize),2,&charcount);	// 2 byte file size 			
 			f_close(&PageF);
 			// 2: Add the page to the page array. (Or we could rebuild just by doing a restart)
+			LinkPage(page.mag, page.page, page.subcode, ix/sizeof(pageindex));
 			// TODO:
 			// 3: Add the page to the node list.  (ditto)
 			// TODO:
