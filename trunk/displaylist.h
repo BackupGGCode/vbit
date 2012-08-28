@@ -110,4 +110,10 @@ void InitDisplayList(void);
 
 NODEPTR GetNodePtr(uint16_t *addr);
 void GetNode(DISPLAYNODE *node,NODEPTR i);
+
+/** Given a newly added page appended to page.all and page.idx
+ *  constructs the page index and node so that it can be displayed
+ */
+void LinkPage(uint8_t mag, uint8_t page, uint8_t subpage, uint16_t ix);
+ 
 #endif
