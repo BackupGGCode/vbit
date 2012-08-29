@@ -112,6 +112,7 @@ void InitDisplayList(void);
 
 NODEPTR GetNodePtr(uint16_t *addr);
 void GetNode(DISPLAYNODE *node,NODEPTR i);
+void DumpNode(NODEPTR np);
 
 /** Given a newly added page appended to page.all and page.idx
  *  constructs the page index and node so that it can be displayed
