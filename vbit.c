@@ -425,10 +425,12 @@ void dumpPage(void)
 	char data[80];
 	//int i;
 	FIL Page;	// hope we have enough memory for this!
-	// xprintf(PSTR("[dumpPage]\n\r"));
+	xprintf(PSTR("[dumpPage]\n\r"));
 	idx=pageFilterToArray(0);
 	np=GetNodePtr(&idx);	// np points to the displaynode
+	xprintf(PSTR("index=%u node number=%u\n\r"),idx,np);
 	GetNode(&n,np);
+	DumpNode(np);
 	// At this point we need to get the pageindex out of pages.idx
 	// NB. Shared file access won't be a problem, I hope.
 	// xprintf(PSTR("Now we need to look up pages.idx[%d]\n\r"),n.pageindex);
@@ -595,6 +597,8 @@ static int vbit_command(char *Line)
 				{
 					xprintf(PSTR("[insert]file error handler needed:%s\n"),str);
 					// At this point we are stuffed.
+					f_close(&PageF);
+					returncode=1;
 					break; // what else should we do if we get here?
 				}
 			}	
@@ -670,18 +674,24 @@ static int vbit_command(char *Line)
 		case 'e' : // We finished. End the update
 			EndOfPage=PageF.fptr;
 			f_close(&PageF);		// We are done with pages.all
+			// We need to refresh the transmission file object so close and re-open it
+			f_close(&pagefileFIL);
+			res=f_open(&pagefileFIL,"pages.all",FA_READ);		// Only need to open this once!			
 			// Or are we all done? We need to write the page to Pmpp.TTI so that we can rebuild the index later
 			pageindex.seekptr=StartOfPage;
 			pageindex.pagesize=(uint16_t)(EndOfPage-StartOfPage); // Warning! 16 bit file size limits to about 50 subpages.
 		    xprintf(PSTR("seek %ld size %d \n\r"),pageindex.seekptr,pageindex.pagesize);
 			// 1: Append pages.idx with the file start/end (append pageindex)
-			res=f_open(&PageF,"pages.idx",FA_READ| FA_WRITE);	// Ready to write // TODO: check the value of res
-			ix=PageF.fsize;		// This is the address in the file
-			res=f_lseek(&PageF, ix);	// Locate the end of the file
+			f_close(&listFIL); // TODO: Perhaps we should check that this is actually opened first?
+			res=f_open(&listFIL,"pages.idx",FA_READ| FA_WRITE);	// Ready to write // TODO: check the value of res
+			ix=listFIL.fsize;		// This is the address in the file
+			res=f_lseek(&listFIL, ix);	// Locate the end of the file
 			// Now append the page index
-			f_write(&PageF,&(pageindex.seekptr),4,&charcount);	// 4 byte seek pointer
-			f_write(&PageF,&(pageindex.pagesize),2,&charcount);	// 2 byte file size 			
-			f_close(&PageF);
+			f_write(&listFIL,&(pageindex.seekptr),4,&charcount);	// 4 byte seek pointer
+			f_write(&listFIL,&(pageindex.pagesize),2,&charcount);	// 2 byte file size 			
+			// Now restore the file to the previous opened readonly state
+			f_close(&listFIL);
+		    res=f_open(&listFIL,"pages.idx",FA_READ);			
 			// 2: Add the page to the page array. (Or we could rebuild just by doing a restart)
 			ix=ix/sizeof(pageindex);
 			xprintf(PSTR("New page mag=%d page=%02X --> added at ix=%d\n\r"),page.mag,page.page,ix);
