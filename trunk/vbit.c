@@ -40,6 +40,9 @@ static unsigned char statusDisk;
 
 static uint8_t echoMode;
 
+static uint8_t passBackspace=false; // Prevent backspace from operating during page load
+
+
 static char pageFilter[6]; 
 // Variables to do with stepping through the directory
 static uint16_t FirstEntry;// last entry in a directory listing (DF and D+ commands)
@@ -254,12 +257,14 @@ static void get_line (char *buff, int len)
 				vbiDone=0; // Reset the flag
 			}
 		if (c == '\r') break;
-		if ((c == '\b') && idx) {
+		// killing \b will kill flashing. Probably need to make something more foolproof and resetting, We can get into a trap with passBackspace
+		if ((c == '\b') && idx && !passBackspace) {
 			idx--;
 			if (echoMode & 0x01) USB_Serial_Send(c);
 		}
-
-		if (started && ((unsigned char)c >= ' ') && (idx < len - 1)) {
+		// For ee command to work, all control characters should have bit 7 set EXCEPT 0x10.
+		if (started && (((unsigned char)c >= ' ') || (unsigned char)c==0x10 ) && (idx < len - 1))
+		{
 			buff[idx++] = c;
 			if (echoMode & 0x01) USB_Serial_Send(c);
 		}
@@ -644,6 +649,7 @@ static int vbit_command(char *Line)
 		switch (Line[2])
 		{
 		case 'a' : // Add a page, line at a time.
+			passBackspace=true;
 			if (firstLine)
 			{
 				firstLine=false;
@@ -656,6 +662,10 @@ static int vbit_command(char *Line)
 				xprintf(PSTR("lseek res=%d\n\r"),res);
 				StartOfPage=PageF.fptr;  // We need the Start Of Page for the index
 			}
+			// uh fellows, Although we get \r => Ctrl-P, we need to map it to 0x8d which is the file format.
+			for (ptr=&Line[4];*ptr;ptr++)
+				if (*ptr==0x10)
+					*ptr=0x8d;
 			f_puts(&Line[4],&PageF);	// The rest of the line is the file contents
 			f_putc('\n',&PageF);	// Add the LF that the interpreter strips out			
 			xprintf(PSTR("Now writing:%s\n\r"),&Line[4]);
@@ -672,6 +682,7 @@ static int vbit_command(char *Line)
 			}
 			break; // a
 		case 'e' : // We finished. End the update
+			passBackspace=false;
 			EndOfPage=PageF.fptr;
 			f_close(&PageF);		// We are done with pages.all
 			// We need to refresh the transmission file object so close and re-open it
