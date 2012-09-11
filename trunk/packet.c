@@ -219,8 +219,11 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 	j=0;
 	for (i=37;i<=44;i++)
 	{
-		if (packet[i]=='0')
+		if (packet[i]=='\r')	// Replace spurious double height. This can really destroy a TV!
+			packet[i]='?';
+		if ((packet[i]>='0') && (packet[i]<='9'))
 		{
+			packet[i]='0';
 			switch (j++)
 			{
 			case 0:packet[i]+=hour/10;break;
@@ -229,6 +232,8 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 			case 3:packet[i]+= min%10;break;
 			case 4:packet[i]+= sec/10;break;
 			case 5:packet[i]+= sec%10;break;
+			default:
+				packet[i]='?';
 			}
 		}
 	}
@@ -290,9 +295,10 @@ static void copyFL(char *packet, char *textline, PAGE *page)
 {
 	long nLink;
 	// add the designation code
+	char *ptr;
 	char *p;
-	packet+=5;
-	packet+=HamTab[0];
+	p=packet+5;
+	*p++=HamTab[0];
 			 // work out what the magazine number for this page is
 	char cCurMag=page->mag;
 	
@@ -306,10 +312,10 @@ static void copyFL(char *packet, char *textline, PAGE *page)
 			return; // failed :-(
 		}
 		// page numbers are hex
-		p=textline-2;
-		*p='0';
-		*(p+1)='x';
-		xatoi(&p,&nLink);
+		ptr=textline-2;
+		*ptr='0';
+		*(ptr+1)='x';
+		xatoi(&ptr,&nLink);
 		//if (page->page==0 && page->mag==1)
 		//{
 //			xprintf(PSTR("[copyFL]page 100 link:%X\n"),nLink);
@@ -319,19 +325,19 @@ static void copyFL(char *packet, char *textline, PAGE *page)
 			
 					 // calculate the relative magazine
 		char cRelMag=(nLink/0x100 ^ cCurMag);
-		packet+=HamTab[nLink & 0xF];			// page units
-		packet+=HamTab[(nLink & 0xF0) >> 4];	// page tens
-		packet+=HamTab[0xF];									// subcode S1
-		packet+=HamTab[((cRelMag & 1) << 3) | 7];
-		packet+=HamTab[0xF];
-		packet+=HamTab[((cRelMag & 6) << 1) | 3];
+		*p++=HamTab[nLink & 0xF];			// page units
+		*p++=HamTab[(nLink & 0xF0) >> 4];	// page tens
+		*p++=HamTab[0xF];									// subcode S1
+		*p++=HamTab[((cRelMag & 1) << 3) | 7];
+		*p++=HamTab[0xF];
+		*p++=HamTab[((cRelMag & 6) << 1) | 3];
 	}	
 	// add the link control byte
-	packet+=HamTab[15];
+	*p++=HamTab[0x0f];
 
 	// and the page CRC
-	packet+=HamTab[0];
-	packet+=HamTab[0];	
+	*p++=HamTab[0];
+	*p++=HamTab[0];	
 }
 
 /** This generates the next line

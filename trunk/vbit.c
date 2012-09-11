@@ -656,10 +656,10 @@ static int vbit_command(char *Line)
 				ClearPage(&page); // Clear out our Page object
 				res=f_open(&PageF,"pages.all",FA_READ| FA_WRITE);	// Ready to write
 				// TODO: check the value of res
-				xprintf(PSTR("Size of pages.all=%ul\n\r"),PageF.fsize);
+				//xprintf(PSTR("Size of pages.all=%ul\n\r"),PageF.fsize);
 				/* Move to end of pages.all to append data */
 				res=f_lseek(&PageF, PageF.fsize);				
-				xprintf(PSTR("lseek res=%d\n\r"),res);
+				//xprintf(PSTR("lseek res=%d\n\r"),res);
 				StartOfPage=PageF.fptr;  // We need the Start Of Page for the index
 			}
 			// uh fellows, Although we get \r => Ctrl-P, we need to map it to 0x8d which is the file format.
@@ -948,7 +948,7 @@ static int vbit_command(char *Line)
 			UTC+=ch;
 		}
 		
-		xprintf(PSTR("UTC=%d\n\r"),UTC);
+		// xprintf(PSTR("UTC=%d\n\r"),UTC); // This upsets the protocol!
 		
 		/**
 		UTC=Line[7]-'0';				// s units
@@ -958,7 +958,8 @@ static int vbit_command(char *Line)
 		UTC=UTC+(Line[3]-'0')*60*60;	// h units
 		UTC=UTC+(Line[2]-'0')*60*60*10;	// h tens
 		*/
-		strcpy_P(str,PSTR("OK\n"));
+		// strcpy_P(str,PSTR("OK\n"));
+		str[0]=0;
 		break;
 	case 'U': // TEST
 		Init830F1();
