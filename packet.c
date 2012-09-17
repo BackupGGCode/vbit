@@ -259,6 +259,7 @@ static unsigned char copyOL(char *packet, char *textline)
 	long linenumber;
 	// Get the line number
 	textline+=3;
+	char ch;
 	xatoi(&textline, &linenumber);
 	//xprintf(PSTR("Line number=%d\n"),(int)linenumber);
 	// Skip to the comma to get the body of the command
@@ -268,20 +269,34 @@ static unsigned char copyOL(char *packet, char *textline)
 		xputc('F');
 		return 0xff; // failed
 	}
-	for (char *p=packet+5;p<(packet+PACKETSIZE);p++)*p='P';
+	for (char *p=packet+5;p<(packet+PACKETSIZE);p++)*p='P'; // If you see a line full of P, we dun goofed.
 	for (char *p=packet+5;*textline && p<(packet+PACKETSIZE);textline++) // Stop on end of file OR packet over run
 	{
 		// TODO: Also need to check viewdata escapes
-		if (*p!=0x0d) // Do not include \r
+		// Only handle MRG mapping atm
+		ch=*textline; // Don't strip off the top bit just yet!
+		if ((ch!=0x0d) && (ch & 0x7f)) // Do not include \r or null
 		{
-			if ((*textline & 0x7f)==0x0a)		
+			if ((ch & 0x7f)==0x0a)		
 			{
 				// *p=0x0d; // Translate lf to cr (double height)
 				*p='?';
 			}
 			else
-				*p=*textline;
+				*p=ch;
 		}
+		else
+		{
+			// \r is not valid in an MRG page, so it must be a truncated line
+			// Fill the rest of the line in with blanks
+			char *r;
+			for (r=p;r<(packet+PACKETSIZE);r++)
+				*r=' '; // fill to end with blanks
+				// *r='z'-(char)(PACKETSIZE-(char)((int)packet+(int)r)); // was space but I want it visible
+			// *r='E';    // Make the last one visibly different (debugging)
+			break;
+		}
+		// if ((*p & 0x7f)==0) *p=' '; // In case a null sneaked in
 		p++;
 	}
 // if (!*textline) xputc('T'); // Not sure what this means
@@ -302,11 +317,20 @@ static void copyFL(char *packet, char *textline, PAGE *page)
 			 // work out what the magazine number for this page is
 	char cCurMag=page->mag;
 	
+	// add the link control byte
+	packet[42]=HamTab[0x0f];
+
+	// and the page CRC
+	packet[43]=HamTab[0];
+	packet[44]=HamTab[0];
+
 	// for each of the six links
-	for (int i=0; (i < 6) && (*textline); i++)
+	for (int i=0; (i < 6); i++)
 	{
+		// TODO: Simplify this. It can't be that difficult to read 6 hex numbers.
+		// TODO: It needs to be much more flexible in the formats that it will accept
 		// Skip to the comma to get the body of the command
-		for (i=0;i<4 && ((*textline++)!=',');i++);
+		for (i=0;i<6 && ((*textline++)!=',');i++);
 		if (*(textline-1)!=',')
 		{
 			return; // failed :-(
@@ -332,12 +356,6 @@ static void copyFL(char *packet, char *textline, PAGE *page)
 		*p++=HamTab[0xF];
 		*p++=HamTab[((cRelMag & 6) << 1) | 3];
 	}	
-	// add the link control byte
-	*p++=HamTab[0x0f];
-
-	// and the page CRC
-	*p++=HamTab[0];
-	*p++=HamTab[0];	
 }
 
 /** This generates the next line

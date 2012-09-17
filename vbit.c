@@ -512,7 +512,7 @@ static int vbit_command(char *Line)
 	else
 	switch (Line[1])
 	{
-	case 'b': // Dump first 19 lines of current page
+	case 'b': // Dump the current page
 		dumpPage();
 		break;
 	case 'C': // Create magazine lists
@@ -1003,7 +1003,7 @@ static int vbit_command(char *Line)
 	case 'X':	/* X - Exit */
 		return 2;	
 	case 'Y': /* Y - Version. Y2 should return a date string */
-		strcpy_P(str,PSTR("VBIT620 Version 0.02"));
+		strcpy_P(str,PSTR("VBIT620 Version 0.03"));
 		break;		
 	case '?' :; // Status TODO
 		xprintf(PSTR("STATUS %02X\n\r"),statusI2C);
@@ -1044,7 +1044,7 @@ int RunVBIT(void)
 	xfunc_out = (void (*)(char))USB_Serial_Send;
 	// Term_Erase_Screen();
 	BUTTON_Init( BUTTON_ALL );
-	xputs(PSTR("VBIT620 Inserter 0.02 Started\nKings Road Applications\n"));
+	xputs(PSTR("VBIT620 Inserter Started"));
 	GPIO_Init();	// Set up the ports
 	if (disk_initialize(0)==FR_OK) // Set up the SD memory card
 		statusDisk=0;

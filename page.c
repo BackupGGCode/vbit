@@ -2,7 +2,7 @@
  * Description       : VBIT Teletext Page Parser
  * Compiler          : GCC
  *
- * Copyright (C) 2010, Peter Kwan
+ * Copyright (C) 2010-2012, Peter Kwan
  *
  * Permission to use, copy, modify, and distribute this software
  * and its documentation for any purpose and without fee is hereby
@@ -94,6 +94,8 @@ unsigned char ParseLine(PAGE *page, char *str)
 			page->control=n;
 		}
 		break;
+	//Why don't we decode these entries?
+	// 1) Either we don't need them, or we do need them later but we need to save memory 
 	case 'C':; // CT,nn,<T|C> - cycle time
 		break;
 	case 'S':; // SP - filename or SC - subcode
