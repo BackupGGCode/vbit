@@ -773,7 +773,7 @@ static int vbit_command(char *Line)
 		}
 		break;
 	case 'H': // H or HO. Set header
-		if (Line[2]=='\0' || Line[4]=='\0') // Don't get confused by checksums
+		if (Line[3]=='\0' || Line[5]=='\0') // Don't get confused by checksums
 		{
 			strcpy_P(str,PSTR("      "));
 			strncat(str,g_Header,32);	// Just readback the header. TODO. Get the correct length
@@ -782,8 +782,9 @@ static int vbit_command(char *Line)
 		else
 		{
 			strncpy(g_Header,&Line[9],32); // accept new header
+			//g_Header[32]=0;					// Make sure it is capped
+			n = ini_puts("service", "header", g_Header, inifile);	// Save this value back to the INI file.
 		}
-		n = ini_puts("service", "header", &(g_Header[0]), inifile);	// Save this value back to the INI file.
 		break;
 	case 'I': // III or I2
 		// I20xnnmm
@@ -1034,7 +1035,7 @@ int LoadINISettings(void)
 	int n;
 	n = ini_gets("service", "outputodd",  "111Q2233P44556678Q", &(g_OutputActions[0][0]), 18, inifile);	
 	n = ini_gets("service", "outputeven", "111Q2233P44556678Q", &(g_OutputActions[1][0]), 18, inifile);	
-	n = ini_gets("service", "header",     "mpp MRG DAY dd MTH", g_Header, 32, inifile);
+	n = ini_gets("service", "header",     "mpp MRG DAY dd MTH", g_Header, 33, inifile);
 	return 0; // TODO: Return success or otherwise
 }
 

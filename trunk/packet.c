@@ -62,7 +62,7 @@ static unsigned char state[8]={0,0,0,0,0,0,0,0};
 #define VBILINES	17
 
 char g_OutputActions[2][18];
-char g_Header[32];
+char g_Header[32]; // Add one for luck (or terminator)
 
 int OptRelays;			/** Holds the current state of the opt out relay signals */
 
@@ -403,7 +403,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		res=GetPage(&pageptr,&pagesize,0xff);	// Get the next transmission page details. TODO: A proper mask. TODO: A return value
 		if (res)
 		{
-			xprintf(PSTR("[insert]Epic Fail: COuld not open initial page\r\n"));			
+			xprintf(PSTR("[insert]Epic Fail: Could not open initial page\r\n"));			
 			put_rc(res);
 			return 1;
 		}	
@@ -488,7 +488,7 @@ static unsigned char insert(char *packet, uint8_t field)
 			res=GetPage(&pageptr,&pagesize,0xff);	// Get the next transmission page details. TODO: A proper mask. TODO: A return value
 			if (res)
 			{
-				xprintf(PSTR("[insert]Epic Fail: COuld not open initial page\r\n"));			
+				xprintf(PSTR("[insert]Epic Fail: Could not open initial page\r\n"));			
 				put_rc(res);
 				return 1;
 			}
