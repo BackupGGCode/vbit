@@ -29,6 +29,17 @@ c:\minited\inserter\inserter.exe. It also requires the INI file or it will get t
 == VBIT Comm Port ==
 This assumes that you have plugged in VBIT and installed the serial port driver INF file. To find the VBIT Comm port you can try using TED Scheduler. Under the tabs Setup->Connection make sure that Com Port is selected. Then press the Comms Setup... button. Your COM port will probably be the highest number port in the list. Select Direct to COM4 or whatever it is. As a virtual com port the baud rate is irrelevant so ignore this.
 
+Now click the button marked Detect Inserter... It should now say VBIT620. If it doesn't connect then look at the information panel. It will probably be telling you about timeouts. Just keep trying. The system doesn't always connect the first time.
+
+== VBIT not connecting? ==
+=== Installing the correct driver ===
+The correct driver is installed by using the MT-X1.INF file. More details to be added here.
+=== Checking the Com number ===
+How to verify that you have the correct port number. In Setup go to the Hardware devices manager. In Windows 7 this is Control Panel->System and Security->System then click on Device Manager. Click on Ports (COM and LPT). On my system it says *MT-X1 CDC (COM4)*. This means that it is the MT-X1 CDC driver which is the correct hardware, and that it has been allocated COM4.
+=== VBIT Still not connecting? ===
+Try restarting VBIT. This will force anything using the COM port to disconnect. Restart VBIT then restart inserter.exe. Try typing Y<enter> in the Expert Window. It should respond with the version number.
+
+
 
 = Details =
 
