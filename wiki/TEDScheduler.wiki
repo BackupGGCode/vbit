@@ -38,15 +38,17 @@ Ideally you would automate this with a schedule.
 
 == To Make a Date/Time updater schedule ==
 Go to Schedules and click the white document sheet (tool tip is New Schedule). Give it a file name and a description. In the textbox marked command put the time command in "T". Select the Repeat to happen every day.
-https://picasaweb.google.com/lh/photo/LrZMJakeSbCM5kBXjgKDGLl2kz7rIuTkxf4CMOW-s2M?feat=directlink
+[https://picasaweb.google.com/lh/photo/LrZMJakeSbCM5kBXjgKDGLl2kz7rIuTkxf4CMOW-s2M?feat=directlink]
 This only sets the time. You also need to set the date. This is done in the header.
 
 Click on the Schedules tab and select Sync.sct. This calls up the schedule editor. Add the OH (output header) line and if you want to run the schedule immediately, then set the AT date to a time in the past.
- AT,25/09/12,00:00
- DE,Setting system time:
- OT
- OH mpp Goto80 DAY MTH dd
- RP,1,00:00  
+{{{
+AT,25/09/12,00:00
+DE,Setting system time:
+OT
+OH mpp Goto80 DAY MTH dd
+RP,1,00:00 
+}}}
 Then click on the Save to disk icon, and save Sync.sct back into the Schedules folder. The schedule will operate immediately, and then once a day.
 == VBIT not connecting? ==
 === Installing the correct driver ===
