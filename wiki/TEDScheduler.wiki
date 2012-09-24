@@ -47,6 +47,7 @@ Click on the Schedules tab and select Sync.sct. This calls up the schedule edito
  OT
  OH mpp Goto80 DAY MTH dd
  RP,1,00:00  
+Then click on the Save to disk icon, and save Sync.sct back into the Schedules folder. The schedule will operate immediately, and then once a day.
 == VBIT not connecting? ==
 === Installing the correct driver ===
 The correct driver is installed by using the MT-X1.INF file. More details to be added here.
