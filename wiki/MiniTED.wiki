@@ -1,4 +1,4 @@
-#MiniTED Teletext Editor
+#summary MiniTED Teletext Editor
 
 = Introduction =
 
