@@ -25,7 +25,7 @@ The root of the system is expected to be c:\minited\. TED Scheduler is in a sub 
 
 = TED Scheduler and VBIT =
 VBIT is partially supported. It is possible to upload new pages. It can also set the header time and details. For a new system we will assume that you are using the standard setup of MiniTED in c:\minited\. The TED Scheduler executable should be placed at
-c:\minited\inserter\Scheduler.exe. It also requires the INI file or it will get terribly confused. To configure the system you should run this and then set up communications as follows:
+c:\minited\inserter\Scheduler.exe. It also requires the Scheduler.ini and InsTypes.ini files or it will get terribly confused. To configure the system you should run this and then set up communications as follows:
 == VBIT Comm Port ==
 This assumes that you have plugged in VBIT and installed the serial port driver INF file. To find the VBIT Comm port you can try using TED Scheduler. Under the tabs Setup->Connection make sure that Com Port is selected. Then press the Comms Setup... button. Your COM port will probably be the highest number port in the list. Select Direct to COM4 or whatever it is. As a virtual com port the baud rate is irrelevant so ignore this.
 
@@ -33,6 +33,9 @@ Now click the button marked Detect Inserter... It should now say VBIT620. If it 
 
 You will notice that your inserter time always starts at 10:00.00. This is because there is no battery backed clock. Press the Set Time button and OK the dialogue box. The time will update within a few seconds and now be correct. However, the date will still be wrong! Go to Setup->System and edit the header. You can add some date fields to the header.
  Example: mpp Goto80 DAY MTH dd
+
+To actually send the header, right click in the "Header" box and select "Write header" from the pop-up menu.  
+
 When you send the header it isn't updated immediately but only when the page is retransmitted so it could be a minute until the header updates.
 Ideally you would automate this with a schedule.
 
