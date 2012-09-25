@@ -16,12 +16,12 @@ Schedules can be created by any method that is convenient including Notepad. For
 
 = File Structure =
 The root of the system is expected to be c:\minited\. TED Scheduler is in a sub folder at c:\minited\inserter. The executable is Scheduler.exe. The supported inserter types are defined in InsTypes.ini. The initialisation are in inserter.ini. The sub folders are
-* Log - Log of scheduler activity 
-* OnAir - Pages that are currently on air
-* Pages - A library of Pages
-* Readback - Pages that have been read back from an inserter (used mainly for inserters that can capture pages)
-* Schedule - Schedule files to control the inserter. There is also an Archive sub folder where the schedule files go after being executed.
-* User - Similar to Pages. Not really sure how old MiniTED handles users.
+  * Log - Log of scheduler activity 
+  * OnAir - Pages that are currently on air
+  * Pages - A library of Pages
+  * Readback - Pages that have been read back from an inserter (used mainly for inserters that can capture pages)
+  * Schedule - Schedule files to control the inserter. There is also an Archive sub folder where the schedule files go after being executed.
+  * User - Similar to Pages. Not really sure how old MiniTED handles users.
 
 = TED Scheduler and VBIT =
 VBIT is partially supported. It is possible to upload new pages. It can also set the header time and details. For a new system we will assume that you are using the standard setup of MiniTED in c:\minited\. The TED Scheduler executable should be placed at
