@@ -37,7 +37,7 @@ You will notice that your inserter time always starts at 10:00.00. This is becau
 To actually send the header, right click in the "Header" box and select "Write header" from the pop-up menu.  
 
 When you send the header it isn't updated immediately but only when the page is retransmitted so it could be a minute until the header updates.
-Ideally you would automate this with a schedule.
+Also, the header needs to be updated with the new date every day. Ideally you would automate this with a schedule.
 
 == To Make a Date/Time updater schedule ==
 Go to Schedules and click the white document sheet (tool tip is New Schedule). Give it a file name and a description. In the textbox marked command put the time command in "T". Select the Repeat to happen every day.
@@ -52,7 +52,7 @@ OT
 OH mpp Goto80 DAY MTH dd
 RP,1,00:00 
 }}}
-Then click on the Save to disk icon, and save Sync.sct back into the Schedules folder. The schedule will operate immediately, and then once a day.
+Then click on the Save to disk icon, and save Sync.sct back into the Schedules folder. The schedule will operate immediately, and then will repeat once a day.
 == VBIT not connecting? ==
 === Installing the correct driver ===
 The correct driver is installed by using the MT-X1.INF file. More details to be added here.
