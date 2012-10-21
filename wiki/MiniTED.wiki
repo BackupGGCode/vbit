@@ -11,17 +11,13 @@ It can be used to read, edit and write teletext pages and carousels. It handles 
 
 = Distribution =
 
-Until MiniTED is sufficiently complete and stable enough for a release it will not be available for download. If you would like to try MiniTED then please email me at
-
-peterk dot vt80 at gmail dot com 
+MiniTED is still under development but if you would like to try MiniTED then you can get it from the Downloads section.
 
 = Bugs =
 Documents have pointers which are not handled correctly and so closed documents pop up again but empty. Ignore these phantom pages.
 
 
-
-
-
-
 = Installation =
 It is supplied as a CAB file. This should be installed but at all the points where it says "Keep your existing file" you should accept this. Don't overwrite your newer dlls with my very old ones. This is because MiniTED has been compiled on a very old system. I hope to move this to an MSI package.
+
+Not sure how it gets installed but the file structure c:\minited\ should have MiniTED placed in it.
