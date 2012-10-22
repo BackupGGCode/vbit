@@ -18,6 +18,19 @@ Documents have pointers which are not handled correctly and so closed documents 
 
 
 = Installation =
-It is supplied as a CAB file. This should be installed but at all the points where it says "Keep your existing file" you should accept this. Don't overwrite your newer dlls with my very old ones. This is because MiniTED has been compiled on a very old system. I hope to move this to an MSI package.
+* Download TED.ZIP and unzip it in a temporary folder.
+* Click on setup.exe
+* Change the Project1 folder to something more meaningful like Minited. MiniTED is normally installed in c:\minited but c:\Program Files\minited will do.
+* When it finally gets to copying it will probably say "A file being copied is older than the file currently on your system". When it says "Keep this file" always say "Yes".
+* Before you run Minited make this directory structure:
+ c:\minited\inserter
+ c:\minited\Inserter\OnAir
+ c:\minited\Inserter\Pages
+ c:\minited\Inserter\User
+ c:\minited\Inserter\Log
+ c:\minited\Inserter\Readback
+ c:\minited\Inserter\Schedule
+ c:\minited\Inserter\Schedule\Archive
+Now you have everything installed you can go back to the downloads section and grab OnAir.zip. Unzip this into the OnAir directory then you will have some pages that you can see how they are made.
 
-Not sure how it gets installed but the file structure c:\minited\ should have MiniTED placed in it.
+TODO: Write the manual!
