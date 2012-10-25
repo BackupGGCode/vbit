@@ -1,4 +1,5 @@
 #summary MiniTED Teletext Editor
+#labels Featured,Phase-Deploy
 
 = Introduction =
 
@@ -18,7 +19,7 @@ Documents have pointers which are not handled correctly and so closed documents 
 
 
 = Installation =
-  * Download TED.ZIP and unzip it in a temporary folder.
+  * Download the zip file and unzip it in a temporary folder.
   * Click on setup.exe
   * Change the Project1 folder to something more meaningful like Minited. MiniTED is normally installed in c:\minited but c:\Program Files\minited will do.
   * When it finally gets to copying it will probably say "A file being copied is older than the file currently on your system". When it says "Keep this file" always say "Yes".
