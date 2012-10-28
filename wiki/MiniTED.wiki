@@ -34,6 +34,7 @@ Documents have pointers which are not handled correctly and so closed documents 
  c:\minited\Inserter\Schedule
  c:\minited\Inserter\Schedule\Archive
 }}}
+  * If the fonts come out all WingDings then they aren't installed correctly. Find the font files (*.FON) and right click on each one, and select Install.
   * Now you have everything installed you can go back to the downloads section and grab OnAir.zip. Unzip this into the OnAir directory then you will have some pages that you can see how they are made.
 
 The manual is coming later but just to get you started:
