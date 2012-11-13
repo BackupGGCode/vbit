@@ -1004,7 +1004,7 @@ static int vbit_command(char *Line)
 	case 'X':	/* X - Exit */
 		return 2;	
 	case 'Y': /* Y - Version. Y2 should return a date string */
-		strcpy_P(str,PSTR("VBIT620 Version 0.03"));
+		strcpy_P(str,PSTR("VBIT620 Version 0.04"));
 		break;		
 	case '?' :; // Status TODO
 		xprintf(PSTR("STATUS %02X\n\r"),statusI2C);
