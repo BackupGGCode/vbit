@@ -47,8 +47,8 @@
 volatile uint8_t vbiDone; // Set when the timer reckons that the vbi is over. Cleared by main.
 volatile uint32_t UTC=36000; // 10:00am
 volatile uint8_t FIFOBusy;	// When set, the FillFIFO process is required to release the FIFO.
-volatile uint8_t fifoReadIndex; /// maintains the tx block index 0..43
-volatile uint8_t fifoWriteIndex; /// maintains the load index 0..43
+volatile uint8_t fifoReadIndex; /// maintains the tx block index 0..MAXFIFOINDEX-1
+volatile uint8_t fifoWriteIndex; /// maintains the load index 0..MAXFIFOINDEX-1
 
  /* Instantiate pointer to fieldPort. */
 static PORT_t *fieldPort = &PORTC;
