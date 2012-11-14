@@ -49,16 +49,50 @@ extern volatile uint32_t UTC; /// Universal Coordinated Time
 uint8_t InitVBI(void);
 extern volatile uint8_t FIFOBusy; /// High when the FIFO is due to be transmitted
 // A block is 45 bytes * 17 or 18 lines = 810 bytes (max)
-// The SPIRAM is 32kb. ie 0x40000/8=32768
+// The SPIRAM is 32kBytes. ie 0x40000/8=32768
 // There is enough space in the SPIRAM for 32768/810 = 40 blocks
 // But we also use a block number to denote the odd/even phase 
 // so we need an even number of blocks which gives us the same 40.
-// However, we want to allow for queue jumping to go on with subtitles
+// We will grab some of this memory for dynamic pages
+// [Idea: However, we want to allow for queue jumping to go on with subtitles
 // and any other "real time" page insertion. We will do this by
 // reserving one pair of blocks. A flag will signify if one or both
-// of these blocks has data (subtitles or live pages) that need to go out. 
+// of these blocks has data (subtitles or live pages) that need to go out. ]
+#define SPIRAMSIZE 32768
 #define FIFOBLOCKSIZE 810
-#define MAXFIFOINDEX 40
-extern volatile uint8_t fifoReadIndex; /// maintains the tx block index 0..39
-extern volatile uint8_t fifoWriteIndex; /// maintains the load index 0..39
+
+// 40 is the maximum that we can fit.
+// We want a big buffer of 40 blocks because if the CPU falls behind then it has 0.8 seconds 
+// to catch up. Things that slow the AVR down. File handling on the SD card. Writing to EEPROM.
+// However it makes live updates tardy and makes clocks delayed.
+// The smallest buffer that is possible is two blocks. 
+// #define MAXFIFOINDEX 40
+// So lets cut it down to 20 ahead.
+#define MAXFIFOINDEX 20
+
+// Now lets do some other calculations for what we are going to do with the spare space.
+// Assuming that we are storing whole pages in the form of raw packets.
+// These will be the dynamic pages, ones that play out direct from RAM.
+
+// The base address of these pages above the FIFO area is 810*20 = 16200.
+#define SRAMPAGEBASE FIFOBLOCKSIZE*MAXFIFOINDEX
+
+#define SRAMPAGEPACKETS 26
+// 24 lines + header + fastext = 26 x 45 = 1170 bytes per page.
+// Probably we should generate row 0 from the stub file or it will mess up the packet sequencer.
+// [what is stub file? It is a tti page that only has a header and a redirect. The idea is
+// that the file is handled like any other page so the packet generation is not affected.
+// It will also supply row 0 so we probably can save a row 0 here by not storing it]
+// This works out at 1170 bytes per dynamic page
+#define SRAMPAGESIZE SRAMPAGEPACKETS*PACKETSIZE
+// How many of these pages can we have?
+// I make it (32768-810*20)/1170=14
+#define SRAMPAGECOUNT (SPIRAMSIZE-SRAMPAGEBASE)/SRAMPAGESIZE
+
+// So to access the page block n, the equation is
+// SRAMPAGEBASE+n*SRAMPAGESIZE
+// where n=0..SRAMPAGECOUNT-1
+
+extern volatile uint8_t fifoReadIndex; /// maintains the tx block index 0..MAXFIFOINDEX-1
+extern volatile uint8_t fifoWriteIndex; /// maintains the load index 0..MAXFIFOINDEX-1
 #endif
