@@ -106,8 +106,19 @@ unsigned char ParseLine(PAGE *page, char *str)
 		break;
 	case 'F':; // FL - fastext links
 		break;
-	case 'R':; // RT - readback time?
+	case 'R':; // RT or RD
+		if (str[1]=='T') // RT - readback time isn't relevant
+			break;			
+		if (str[1]=='D') // RD,<n> - redirect. Read the data lines from the FIFO rather than the page file OL commands.
+		// The idea is that we can use a reserved area of RAM for dynamic pages.
+		// These are pages that change a lot and don't suit being stored in SD card
+		// 1) Read the RD parameter, which is a number between 0 and SRAMPAGECOUNT (actually 14 atm)
+		// We will store this in the page structure ready for the packetizer to grab the SRAM 
+		ptr=&str[1];
+		xatoi(&ptr,&n);
+		page->redirect=n;
 		break;			
+		
 	default :
 		xprintf(PSTR("[Parse page]unhandled page code=%c\n"),str[0]);	
 		return 1;
@@ -152,6 +163,9 @@ unsigned char ParsePage(PAGE *page, char *filename)
 	return 0;
 }
 
+/** ClearPage initialises all the variables in a page structure
+ * \param page A pointer to a page structure
+ */
 void ClearPage(PAGE *page)
 {
 	page->filename[0]=0;
@@ -161,4 +175,5 @@ void ClearPage(PAGE *page)
 	page->timerMode='T';
 	page->control=0;
 	page->filesize=0;
-}
+	page->redirect=0xff;	// Which SRAM page to redirect input from. 0..14 or 0xff for None
+} // ClearPage

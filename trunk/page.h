@@ -2,7 +2,7 @@
  * Description       : VBIT Teletext Page Parser
  * Compiler          : GCC
  *
- * Copyright (C) 2010, Peter Kwan
+ * Copyright (C) 2010-2012, Peter Kwan
  *
  * Permission to use, copy, modify, and distribute this software
  * and its documentation for any purpose and without fee is hereby
@@ -32,15 +32,16 @@
  */
 typedef struct _PAGE_ 
 {
-	char filename[40]; /// May need to cut this down
+	char filename[40]; /// May need to cut this down if we get short of RAM
 	unsigned char mag;		/// 1..8 magazine number
 	unsigned char page;		/// 00..99 page number
-	unsigned char subpage;	/// 00..99 (not part of ETSI spec)
+	unsigned char subpage;	/// 00..99 (not part of ETSI spec [or is it?])
 	unsigned int subcode;	/// subcode (we use it to hold subpage)
 	unsigned char timerMode; /// C=times around magazine, T=timed
 	unsigned int time;		/// seconds
 	unsigned int control;	/// C bits and non ETSI bits (See tti specification)
 	unsigned int filesize;	/// Size (bytes) of the file that this page was parsed from
+	unsigned int redirect;	/// FIFO ram page to get text data from, instead of from the file. 0..SRAMPAGECOUNT
 } PAGE;
 
 /** Parse a single line of a tti teletext page
@@ -58,6 +59,7 @@ unsigned char ParsePage(PAGE *page, char *filename);
 
 /** Clear a page structure
  * The mag is set to 0x99 as a signal that it is not valid
+ * Other variables are set null or invalid
  * \param page - Pointer to PAGE structure
  */
 void ClearPage(PAGE *page);

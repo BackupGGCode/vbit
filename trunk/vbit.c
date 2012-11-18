@@ -798,6 +798,37 @@ static int vbit_command(char *Line)
 			xprintf(PSTR("Done\n"));
 		}		
 		break;
+	case 'J' : // J<h>,DATA - Send a packet to SRAM address
+		// Probably want a whole family of J commands.
+		// JA<h> - Set the address pointer to SRAM page <h> where <h> is 0..e
+		// JW<data> - Write a complete 45 byte packet to the current address and increment
+		// JR<data> - Read back the next block of data and increment the pointer.
+		// [JT<h> - Retransmit page <h> immediately. (can't work. You must Tx the parent page) ]
+		// JT<mpp> - Transmit page <mpp> immediately. (probably need to set a flag in the magazine stream
+		// to insert the page in the next transmission slot
+		switch (Line[2])
+		{
+		case 'A':
+			xprintf(PSTR("JA set SRAM address\n"));
+			// Read the SRAM page value 0..e. There are 14 pages 
+			// Do we need finer control than setting the pointer to the start?
+			// For the lulz we probably want to have complete random access.
+			break;
+		case 'W':
+			xprintf(PSTR("JW Write SRAM data\n"));
+			// Write a single packet
+			// Not sure how we are going to map control codes but probably the same as OL 
+			break;
+		case 'R':
+			xprintf(PSTR("JR Read back SRAM data\n"));
+			// Read back a single packet (translated back into OL format)
+			break;
+		case 'T':
+			xprintf(PSTR("JT Transmit mpp\n"));
+			// Set a flag to transmit the selected page ASAP.
+			break;
+		}
+		break;
 	case 'L': // L<nn>,<line data>
 		// We don't use L in vbit. Because it would require RAM buffering or more file writing,
 		// instead we use the e command which writes the file directly.
