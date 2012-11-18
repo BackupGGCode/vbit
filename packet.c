@@ -472,6 +472,8 @@ static unsigned char insert(char *packet, uint8_t field)
 		// xputs(PSTR("H"));
 		Header(packet,page.mag,page.page,page.subpage,page.control,g_Header);		// 6 - 24 characters plus 8 for clock
 		state[mag]=STATE_HEADER;
+		// TODO: check that page.redirect is indicating a redirect,
+		// if so then set up the pointer
 		break;
 	case STATE_HEADER: // We are waiting for the field to change before we can tx
 		// xputs(PSTR("H"));
@@ -483,6 +485,15 @@ static unsigned char insert(char *packet, uint8_t field)
 		}
 		state[mag]=STATE_SENDING; // We have the new field. Change state
 	case STATE_SENDING:
+		// TODO:
+		// The pointer must be initialised before we get here, at the same time that we set STATE_HEADER
+		// Are we in redirect mode?
+		// if (page.redirect!=0xff)
+		// Do something like copyOL from SRAM location given in page.redirect
+		// Update the pointer.
+		// If we have copied all the pages then we go to STATE_IDLE.		
+		// STATE_IDLE if The ptr has an invalid CRI/MRAG or ptr is at the end of the page
+		// else // normal page
 		if (f_eof(&pagefileFIL) || noCarousel || (pagefileFIL.fptr>=(pageptr+pagesize))) // Page done?
 		{
 			res=GetPage(&pageptr,&pagesize,0xff);	// Get the next transmission page details. TODO: A proper mask. TODO: A return value
