@@ -75,7 +75,7 @@ extern volatile uint8_t FIFOBusy; /// High when the FIFO is due to be transmitte
 // These will be the dynamic pages, ones that play out direct from RAM.
 
 // The base address of these pages above the FIFO area is 810*20 = 16200.
-#define SRAMPAGEBASE FIFOBLOCKSIZE*MAXFIFOINDEX
+#define SRAMPAGEBASE (FIFOBLOCKSIZE*MAXFIFOINDEX)
 
 #define SRAMPAGEPACKETS 26
 // 24 lines + header + fastext = 26 x 45 = 1170 bytes per page.
@@ -84,10 +84,10 @@ extern volatile uint8_t FIFOBusy; /// High when the FIFO is due to be transmitte
 // that the file is handled like any other page so the packet generation is not affected.
 // It will also supply row 0 so we probably can save a row 0 here by not storing it]
 // This works out at 1170 bytes per dynamic page
-#define SRAMPAGESIZE SRAMPAGEPACKETS*PACKETSIZE
+#define SRAMPAGESIZE (SRAMPAGEPACKETS*PACKETSIZE)
 // How many of these pages can we have?
 // I make it (32768-810*20)/1170=14
-#define SRAMPAGECOUNT (SPIRAMSIZE-SRAMPAGEBASE)/SRAMPAGESIZE
+#define SRAMPAGECOUNT ((SPIRAMSIZE-SRAMPAGEBASE)/SRAMPAGESIZE)
 
 // So to access the page block n, the equation is
 // SRAMPAGEBASE+n*SRAMPAGESIZE

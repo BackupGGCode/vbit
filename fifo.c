@@ -92,10 +92,11 @@ int GetSerialRamStatus(void)
 
 void SetSerialRamAddress(unsigned char RWMode, uint16_t address)
 {
+	delay_us(1); // Was 1. 
 	SPI_MasterSSHigh(ssPort, PIN4_bm); // Toggle the chip to reset any mode
-	delay_us(1);
+	delay_us(1); // Was 1. 
 	SPI_MasterSSLow(ssPort, PIN4_bm);
-	delay_us(1);
+	delay_us(1); // Was 1. Can set it back if this doesn't help
 	SPI_MasterTransceiveByte(&spiMaster,RWMode); // Read or Write command
 	// now the 15 address bits
 	SPI_MasterTransceiveByte(&spiMaster,(address>>8)&0xff); // Write address high
@@ -114,13 +115,13 @@ void WriteSerialRam(char *buffer, int length)
 void ReadSerialRam(char *buffer, int length)
 {
 	unsigned int i;
-	xputs(PSTR("ReadSerialRam\n\rRX:"));
+	// xputs(PSTR("ReadSerialRam\n\rRX:"));
 	for(i=0;i<length;i++)
 	{
 		buffer[i]=SPI_MasterTransceiveByte(&spiMaster,'?'); // get the bytes
-		xprintf(PSTR(" %02X"),buffer[i]);
+		// xprintf(PSTR(" %02X"),buffer[i]);
 	}
-	xputs(PSTR("\n\r"));
+	// xputs(PSTR("\n\r"));
 	buffer[length]=0;
 }
 
