@@ -363,6 +363,9 @@ static void copyFL(char *packet, char *textline, PAGE *page)
  * Easy! There isn't a lot of "state" needed.
  * We have the state of the magazine. Already got that.
  * Then we will need to look after the file pointers so that we can read from multiple magazines.
+ * \param packet : A char array that gets filled with a text packet
+ * \param field : A boolean indicating which TV field we are on
+ * \return 0 if OK, >0 if there is a file reading problem
  */
 static unsigned char insert(char *packet, uint8_t field)
 {
@@ -375,6 +378,7 @@ static unsigned char insert(char *packet, uint8_t field)
 	//char listentry[25];
 	char data[80];
 	char *str;
+	static char *redirectPtr;	// When a page is redirected to SRAM we use this pointer
 	// char *p;
 	unsigned char row;
 	static uint8_t myfield;
@@ -473,7 +477,9 @@ static unsigned char insert(char *packet, uint8_t field)
 		Header(packet,page.mag,page.page,page.subpage,page.control,g_Header);		// 6 - 24 characters plus 8 for clock
 		state[mag]=STATE_HEADER;
 		// TODO: check that page.redirect is indicating a redirect,
-		// if so then set up the pointer
+		// if so then set up the pointer. (Also see JA/JW commands)
+		if (page.redirect<SRAMPAGECOUNT)
+			redirectPtr=(char *)SRAMPAGEBASE+page.redirect*SRAMPAGESIZE;
 		break;
 	case STATE_HEADER: // We are waiting for the field to change before we can tx
 		// xputs(PSTR("H"));
@@ -485,10 +491,34 @@ static unsigned char insert(char *packet, uint8_t field)
 		}
 		state[mag]=STATE_SENDING; // We have the new field. Change state
 	case STATE_SENDING:
-		// TODO:
-		// The pointer must be initialised before we get here, at the same time that we set STATE_HEADER
+		// The pointer is initialised before we get here, at the same time that we set STATE_HEADER
 		// Are we in redirect mode?
-		// if (page.redirect!=0xff)
+		// WARNING. The mag must match the header?
+		// TODO: We must save the mag from row 0
+		// and insert it here
+		if (page.redirect!=0xff)
+		{
+			// Get the next line of SRAM data
+			DeselectSerialRam();
+			xprintf(PSTR("Redirect reading from=%04X\n"),redirectPtr);
+			SetSerialRamAddress(SPIRAM_READ, (uint16_t)redirectPtr);
+			ReadSerialRam(packet,PACKETSIZE);
+			DeselectSerialRam();
+			// Validate for CRI/FC
+			//if (packet[0]!=0x55 || packet[1]!=0x55 || packet[2]!=0x27)
+			if (packet[0]!=0x55) // It isn't a valid packet? The page is ended.
+			{
+				state[mag]=STATE_IDLE;	// Set the IDLE state and get ready for the next page
+				noCarousel=1;
+				res=GetPage(&pageptr,&pagesize,0xff);	// Get the next transmission page details. 			
+				break;
+			}
+			redirectPtr+=PACKETSIZE;
+			// We can transmit
+			Parity(packet,5);
+			break;
+		}
+		// Normal page from SD card.....
 		// Do something like copyOL from SRAM location given in page.redirect
 		// Update the pointer.
 		// If we have copied all the pages then we go to STATE_IDLE.		
@@ -533,7 +563,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		}
 		else
 		{
-			// Get the next line
+			// Get the next line from SD card
 			// xputs(PSTR("S"));
 			str=f_gets(data,sizeof(data),&pagefileFIL);
 			if (str)
@@ -623,8 +653,11 @@ void FillFIFO(void)
 
 	// Get the FIFO ready for new data
 	PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control
+
 	fifoWriteAddress=fifoWriteIndex*FIFOBLOCKSIZE+fifoLineCounter*PACKETSIZE; 
-	SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO address to write to the current write address
+	// Don't need to set the address until later. Why do it here?
+	//... because the system doesn't seem to work reliably otherwise
+	SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO address to write to the current write address	
 	evenfield=(fifoWriteIndex)%2;	
 	// xputs(PSTR("i"));	
 	while(1) // loop until we hit a FIFO access conflict or the FIFO is full.
@@ -743,7 +776,11 @@ void FillFIFO(void)
 			// xputs(PSTR("x")); // Flag that the line was saved for the next field 			
 			return;
 		}
+		// TODO. This may have been messed up by a SPIRAM_READ in redirect mode
+		//PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control [This should be redundant!]
 
+		// REALLY would like to do this here, but it seems to upset the fifo
+		//SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO address to write to the current write address
 		WriteSerialRam(packet, PACKETSIZE);	// Now we can put out the packet
 
 		// Work out the next line
@@ -767,7 +804,7 @@ void FillFIFO(void)
 		}	
 		// xputc(fifoLineCounter+'a');	// show the current line number
 		
-	}
+	} // while
 	// Reset the FIFO ready to clock out TTX (vbi.c now does the switch)
 	//SetSerialRamAddress(SPIRAM_READ, 0); // Set the FIFO to read from address 0
 	//PORTC.OUT|=VBIT_SEL; // Set the mux to DENC.
