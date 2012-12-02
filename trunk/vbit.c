@@ -829,6 +829,7 @@ static int vbit_command(char *Line)
 				SRAMTest='A';
 				row=1;
 			}
+			// We should now fill the packet with some instructions on how to use it!
 			// Set the SRAM page address 0..e. There are 14 pages 
 			// Coarse address setting
 			// For the lulz, JZ gives random access down to byte level
@@ -854,9 +855,17 @@ static int vbit_command(char *Line)
 			// Load and decode the packet
 			// ** Temporary section **	
 			// Replace this with a section that reads a line of data from USB
+			
+			// For the first attempt, I'll just copy the rest of the command line
+			// I think it is null terminated? Hmm or \r
+			// JW,<rest of command line>
+			PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control
 			WritePrefix(packet, 5, row++);
-			for (int i=5;i<45;i++)
-				packet[i]=SRAMTest+i;
+			for (int i=5;i<45 && Line[i-1] && Line[i-1]!='\r';i++)
+			{
+				ch=Line[i-1];
+				packet[i]=ch;
+			}
 			// ** /Temporary section **
 			SetSerialRamAddress(SPIRAM_WRITE, SRAMAddress);
 			xprintf(PSTR("JW write address=%04X\n"),SRAMAddress);
