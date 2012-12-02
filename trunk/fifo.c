@@ -4,6 +4,7 @@
  * be shared between the CPU and the video encoder (DENC)
  *
  * Compiler          : GCC
+ * In AVR Studio 4 it only seems to run OK with opt=s
  *
  * Copyright (C) 2010, Peter Kwan
  * based on Atmel:spi_polled_demo.c

@@ -14,7 +14,7 @@
  *  6) Databroadcast
  *  7) Other packet 8/30 formats
  *
- * Copyright (c) 2010 Peter Kwan
+ * Copyright (c) 2010-2012 Peter Kwan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -502,8 +502,11 @@ static unsigned char insert(char *packet, uint8_t field)
 			DeselectSerialRam();
 			xprintf(PSTR("Redirect reading from=%04X\n"),redirectPtr);
 			SetSerialRamAddress(SPIRAM_READ, (uint16_t)redirectPtr);
-			ReadSerialRam(packet,PACKETSIZE);
+			ReadSerialRam(data,PACKETSIZE);	// Could load direct into packet, but it may be a bug?
 			DeselectSerialRam();
+			for (int i=0;i<PACKETSIZE;i++)
+				packet[i]=data[i];
+			
 			// Validate for CRI/FC
 			//if (packet[0]!=0x55 || packet[1]!=0x55 || packet[2]!=0x27)
 			if (packet[0]!=0x55) // It isn't a valid packet? The page is ended.
@@ -780,7 +783,9 @@ void FillFIFO(void)
 		//PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control [This should be redundant!]
 
 		// REALLY would like to do this here, but it seems to upset the fifo
-		//SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO address to write to the current write address
+		fifoWriteAddress=fifoWriteIndex*FIFOBLOCKSIZE+fifoLineCounter*PACKETSIZE; 
+		
+		SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO address to write to the current write address
 		WriteSerialRam(packet, PACKETSIZE);	// Now we can put out the packet
 
 		// Work out the next line
@@ -799,7 +804,7 @@ void FillFIFO(void)
 			{
 				// Set the next SPI RAM address
 				fifoWriteAddress=fifoWriteIndex*FIFOBLOCKSIZE+fifoLineCounter*PACKETSIZE; 
-				SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO next address
+		//		SetSerialRamAddress(SPIRAM_WRITE, fifoWriteAddress); 	// Set FIFO next address
 			}
 		}	
 		// xputc(fifoLineCounter+'a');	// show the current line number
