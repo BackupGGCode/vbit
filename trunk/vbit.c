@@ -860,7 +860,9 @@ static int vbit_command(char *Line)
 			// I think it is null terminated? Hmm or \r
 			// JW,<rest of command line>
 			PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control
-			WritePrefix(packet, 5, row++);
+			WritePrefix(packet, 5, row); // This prefix gets replaced later
+			packet[3]=row;	// The row gets encoded just before writing to FIFO
+			row++;
 			for (int i=5;i<45 && Line[i-1] && Line[i-1]!='\r';i++)
 			{
 				ch=Line[i-1];
@@ -1130,6 +1132,7 @@ int LoadINISettings(void)
 
 int RunVBIT(void)
 {
+	uint8_t initError=0;
 	/* Join xitoa module to USB-Serial bridge module */
 	xfunc_out = (void (*)(char))USB_Serial_Send;
 	// Term_Erase_Screen();
@@ -1141,7 +1144,7 @@ int RunVBIT(void)
 	else statusDisk=1;
 	f_mount(0,&Fatfs[0]);
 	InitStream();
-	InitDisplayList();				// Do this before we start interrupts!!!
+	initError=InitDisplayList();				// Do this before we start interrupts!!!
 	
 	pageFilter[0]=0;		// I think that statics get zeroed anyway.
 

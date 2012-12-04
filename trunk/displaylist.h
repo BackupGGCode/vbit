@@ -106,7 +106,7 @@ node address = (node * sizeof(node)) + PAGEARRAYSIZE
 
 /** clear out the whole display list
 */
-void InitDisplayList(void);
+uint8_t InitDisplayList(void);
 // ??void AddPage(??,??);
 // uint8_t DeleteRange(char *range);
 

@@ -263,8 +263,9 @@ xprintf(PSTR("\n\r"));
  
  /** This takes the page.idx list and makes a sorted display list out of it
   * We need to look at all the pages and extract their MPPSS
+  * \return 0 if OK, >0 if failed 
   */
- void ScanPageList(void)
+ uint8_t ScanPageList(void)
  {
 	//FIL PageIndex;		// page.idx. now listFIL
 	//FIL PageAll;	// page.all. now pagefileFIL	
@@ -292,7 +293,7 @@ xprintf(PSTR("\n\r"));
 		xprintf(PSTR("[displaylist]Epic Fail. Can not open pages.idx\n"));			
 		put_rc(res);
 		// At this point we might try to create page.all and pages.idx
-		return;
+		return 1;
 	}
 	
 	res=f_open(&pagefileFIL,"pages.all",FA_READ);
@@ -300,8 +301,8 @@ xprintf(PSTR("\n\r"));
 	{
 		xprintf(PSTR("[displaylist]Epic Fail. Can not open page.all\n"));			
 		put_rc(res);
-		f_close(&pagefileFIL);
-		return;
+		f_close(&listFIL);
+		return 1;
 	}
 
 	spiram_init();
@@ -331,12 +332,13 @@ xprintf(PSTR("\n\r"));
 	}
 	f_close(&listFIL);
 	f_close(&pagefileFIL);
+	return 0;
  } // ScanPageList
   
  /** Set up all the lists.
   * Scan all the existing pages and make a sorted list
   */
- void InitDisplayList(void)
+ uint8_t InitDisplayList(void)
  {
 	xprintf(PSTR("[InitDisplayList] Started\n\r"));
 	spiram_init();
@@ -348,8 +350,9 @@ xprintf(PSTR("\n\r"));
 	MakeFreeList();
 	Dump();
 	// Now scan the pages list and make a sorted list, creating nodes for Root, Node and Junction
-	ScanPageList();
+	uint8_t result=ScanPageList();
 	xprintf(PSTR("[InitDisplayList] Exits\n\r"));
+	return result;
  } // initDisplayList
  
  
