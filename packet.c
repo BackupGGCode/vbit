@@ -500,7 +500,7 @@ static unsigned char insert(char *packet, uint8_t field)
 		{
 			// Get the next line of SRAM data
 			DeselectSerialRam();
-			xprintf(PSTR("Redirect reading from=%04X\n"),redirectPtr);
+			// xprintf(PSTR("Redirect reading from=%04X\n"),redirectPtr);
 			SetSerialRamAddress(SPIRAM_READ, (uint16_t)redirectPtr);
 			ReadSerialRam(data,PACKETSIZE);	// Could load direct into packet, but it may be a bug?
 			DeselectSerialRam();
@@ -517,6 +517,10 @@ static unsigned char insert(char *packet, uint8_t field)
 				break;
 			}
 			redirectPtr+=PACKETSIZE;
+			// Put the page's mag number in place of the one we have got.
+			// Note that the row is in packet[3]
+			WritePrefix(packet, page.mag, packet[3]); // This prefix gets replaced later
+
 			// We can transmit
 			Parity(packet,5);
 			break;
@@ -693,7 +697,8 @@ void FillFIFO(void)
 			case '7' :;
 			case '8' :;
 				// xputs(PSTR("i"));			
-				insert(packet,evenfield);
+				if (insert(packet,evenfield))
+					return;	// Oops fail
 				break;
 			case 'Z' : // How can this even get here when there is no Z?
 				if (OptOutMode>0)
@@ -723,7 +728,10 @@ void FillFIFO(void)
 				}
 				else
 				if (SendDataBroadcast(packet))
-					insert(packet,evenfield);	// If there is no databroadcast to send, insert the next normal line
+				{
+					if (insert(packet,evenfield))	// If there is no databroadcast to send, insert the next normal line
+						return;
+				}
 				else				
 				{
 				

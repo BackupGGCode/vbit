@@ -112,8 +112,10 @@ unsigned char ParseLine(PAGE *page, char *str)
 		if (str[1]=='D') // RD,<n> - redirect. Read the data lines from the FIFO rather than the page file OL commands.
 		// The idea is that we can use a reserved area of RAM for dynamic pages.
 		// These are pages that change a lot and don't suit being stored in SD card
-		// 1) Read the RD parameter, which is a number between 0 and SRAMPAGECOUNT (actually 14 atm)
+		// 1) Read the RD parameter, which is a number between 0 and SRAMPAGECOUNT (actually 0x0e (14) atm)
 		// We will store this in the page structure ready for the packetizer to grab the SRAM 
+		str[1]='0';
+		str[2]='x';
 		ptr=&str[1];
 		xatoi(&ptr,&n);
 		page->redirect=n;
