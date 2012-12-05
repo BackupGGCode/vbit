@@ -42,7 +42,7 @@ static void put_rc (FRESULT rc)
 	for (p = str, i = 0; i != rc && pgm_read_byte_near(p); i++) {
 		while(pgm_read_byte_near(p++));
 	}
-	xprintf(PSTR("rc=%u FR_%S\n"), (WORD)rc, p);	// TODO
+	xprintf(PSTR("[sdifilemanager.c] rc=%u FR_%S\n"), (WORD)rc, p);	// TODO
 }
 
 /** Create the magazine and carousel list files
