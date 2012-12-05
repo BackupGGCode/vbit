@@ -236,7 +236,7 @@ xprintf(PSTR("\n\r"));
 	mag=(mag-1) & 0x07; // mags are 0 to 7 in this array
 	// What is the address of this page? 
 	cellAddress=((mag<<8)+page)*sizeof(NODEPTR);
-	// xprintf(PSTR("[LinkPage] Enters page ix=%d cell=%d\n\r"),ix,cellAddress);
+	xprintf(PSTR("[LinkPage] Enters page ix=%d cell=%d\n\r"),ix,cellAddress);
 	np=GetNodePtr(&cellAddress);
 	// Is the cell empty?
 	
@@ -258,7 +258,7 @@ xprintf(PSTR("\n\r"));
 	}
 	else
 		xprintf(PSTR("[LinkPage] Sorry, carousels are NOT implemented (np=%d)\n\r"),np);
-	// xprintf(PSTR("[LinkPage] Exits\n\r"));
+	xprintf(PSTR("[LinkPage] Exits\n\r"));
  } // LinkPage
  
  /** This takes the page.idx list and makes a sorted display list out of it
@@ -328,10 +328,11 @@ xprintf(PSTR("\n\r"));
 		// TODO: Find or create the root of the mag M 
 		// Something like 
 		LinkPage(p->mag,p->page,p->subpage,ix);
-		// xprintf(PSTR("next iteration\n\r"));
+		xprintf(PSTR("next iteration\n\r"));
 	}
 	f_close(&listFIL);
 	f_close(&pagefileFIL);
+	xprintf(PSTR("[ScanPageList] Exits\n\r"));
 	return 0;
  } // ScanPageList
   
