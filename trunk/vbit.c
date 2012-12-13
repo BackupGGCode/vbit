@@ -466,7 +466,6 @@ static int vbit_command(char *Line)
 {
 	static uint8_t firstLine=true;
 	static uint16_t SRAMAddress;	// The address pointer into the FIFO serial ram
-	static uint8_t SRAMTest;
 	unsigned char rwmode;
 	unsigned char returncode=0;
 	int pagecount;
@@ -826,8 +825,7 @@ static int vbit_command(char *Line)
 				n=SRAMPAGEBASE+n*SRAMPAGESIZE;	// This is the actual address
 				xprintf(PSTR("JA address=%04X\n"),n);
 				SRAMAddress=n;
-				SRAMTest='A';
-				row=1;
+				//row=1;
 			}
 			// We should now fill the packet with some instructions on how to use it!
 			// Set the SRAM page address 0..e. There are 14 pages 
@@ -846,36 +844,48 @@ static int vbit_command(char *Line)
 			// For the lulz and ability to plonk stuff using random access.
 			SRAMAddress=n;
 			break;
-		case 'W': // JW - Write a packet to the SRAM page buffer
+		case 'W': // JW,<row>,data - Write a packet to the SRAM page buffer
 			xprintf(PSTR("JW Write SRAM data\n"));
+			ptr=&Line[3];
+			while (*ptr>=' ' && !isdigit(*ptr)) ptr++;
+			row=atoi(ptr);
+			if (!row) // Row address must be greater than 0 					
+			{
+				returncode=1;	
+				break;
+			}
+			while (isdigit(*ptr) || *ptr==',') ptr++;
+			// If the fifo is transmitting, we must wait here
+			for (i=0;FIFOBusy;i++) if (!i%100) xprintf(PSTR("*"));	// Can this break if the video source has stopped?
+			xprintf(PSTR("JW addr=%d\n"),row);
 			// Write a single packet
 			// Not sure how we are going to map control codes but probably the same as OL 
 			// Write the packet that we are going to decode into @SRAMAddress
 			// TODO: Check the row number to see we don't have a buffer overrun
 			// Load and decode the packet
-			// ** Temporary section **	
+
 			// Replace this with a section that reads a line of data from USB
 			
 			// For the first attempt, I'll just copy the rest of the command line
 			// I think it is null terminated? Hmm or \r
 			// JW,<rest of command line>
 			PORTC.OUT&=~VBIT_SEL; // Set the mux to MPU so that we are in control
+			for (i=0;i<45;i++)packet[i]=0;
 			WritePrefix(packet, 5, row); // This prefix gets replaced later
 			packet[3]=row;	// The row gets encoded just before writing to FIFO
-			row++;
-			for (int i=5;i<45 && Line[i-1] && Line[i-1]!='\r';i++)
+			//row++;
+			for (int i=5;i<45 && *ptr && *ptr!='\r';i++)
 			{
-				ch=Line[i-1];
-				packet[i]=ch;
+				packet[i]=*ptr++;
 			}
-			// ** /Temporary section **
-			SetSerialRamAddress(SPIRAM_WRITE, SRAMAddress);
-			xprintf(PSTR("JW write address=%04X\n"),SRAMAddress);
+			// ** find the address of the row **
+			n=SRAMAddress+(row-1)*PACKETSIZE;
+			SetSerialRamAddress(SPIRAM_WRITE, n);
+			xprintf(PSTR("JW write address=%04X\n"),n);
 
-			SRAMAddress+=PACKETSIZE;
+			//SRAMAddress+=PACKETSIZE;
 			WriteSerialRam(packet,45);
 			DeselectSerialRam();
-			SRAMTest++;
 			break;
 		case 'R':
 			xprintf(PSTR("JR Read back SRAM data\n"));

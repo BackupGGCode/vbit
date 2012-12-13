@@ -479,7 +479,9 @@ static unsigned char insert(char *packet, uint8_t field)
 		// TODO: check that page.redirect is indicating a redirect,
 		// if so then set up the pointer. (Also see JA/JW commands)
 		if (page.redirect<SRAMPAGECOUNT)
+		{
 			redirectPtr=(char *)SRAMPAGEBASE+page.redirect*SRAMPAGESIZE;
+		}
 		break;
 	case STATE_HEADER: // We are waiting for the field to change before we can tx
 		// xputs(PSTR("H"));
@@ -509,11 +511,13 @@ static unsigned char insert(char *packet, uint8_t field)
 			
 			// Validate for CRI/FC
 			//if (packet[0]!=0x55 || packet[1]!=0x55 || packet[2]!=0x27)
+			// TODO: This isn't right. We should transmit all the valid packets in the page.
 			if (packet[0]!=0x55) // It isn't a valid packet? The page is ended.
 			{
 				state[mag]=STATE_IDLE;	// Set the IDLE state and get ready for the next page
 				noCarousel=1;
-				res=GetPage(&pageptr,&pagesize,0xff);	// Get the next transmission page details. 			
+				res=GetPage(&pageptr,&pagesize,0xff);	// Get the next transmission page details. 	
+				QuietLine(packet,0x0f);	// Wipe out this line, just in case			
 				break;
 			}
 			redirectPtr+=PACKETSIZE;

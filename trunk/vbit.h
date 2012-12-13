@@ -36,6 +36,7 @@
 	*/
 //#include <assert.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "../minini/minIni.h"		
 #include <string.h>
