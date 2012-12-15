@@ -89,7 +89,7 @@ void FieldInterruptHandler(void)
 
 	// Start the vbi timer
 	// We want a preset 15625 cycles at fosc/1 for 1024us
-	// Because 1ms * 16MHz = 15625
+	// Because 1ms * 16MHz = 16000000/1024=15625
 	/* Set period/TOP value. */
 
 	timerVBIControl->PER=15625+1024; // Add a bit on just to make sure that we clear the vbi
@@ -228,8 +228,10 @@ ISR(TCE1_OVF_vect)
 	}
 	else
 	{
-		// Prime the clock for 1ms
-		timerFIFOBusyControl->PER=500; // 1ms
+		// Prime the clock for 1ms. This is the warning that we are soon to take over the FIFO
+		// The preset at fosc/64. for 1ms is (16000000 * 0.001s)/64 = 250.
+		// If the crystal is changed then adjust this to avoid killing the text
+		timerFIFOBusyControl->PER=500; // 1ms (was 500)
 		/* Select clock source. */
 		timerFIFOBusyControl->CTRLA = ( timerFIFOBusyControl->CTRLA & ~TC1_CLKSEL_gm ) | TC_CLKSEL_DIV64_gc;	
 		/* Set a low level overflow interrupt.*/
