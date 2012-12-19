@@ -9,17 +9,13 @@
 //#include "paritytab.h"
 #include "escape.h"
 
-/*
- * $Log: escape.c,v $
- * Revision 1.5  2004/09/02 16:45:09  bryan
- * Nightly commit
- *
+/** DeEscape:
+ * \param packetLength : Number of characters to take from szSource
+ * \param szPacket : Data destination of chars copied from szSource with removed viewdata escapes
+ * \param szSource : Data source
+ * \return The resulting length of the string
+ * TODO: Check that \r double height is correctly handled
  */
-
-// DeEscape:
-// Takes packetLength characters from szSource
-// and removes viewdata escapes into szPacket.
-// Returns the resulting length of the string
 int DeEscape(char *szPacket,char *szSource,int packetLength)
 {
   int i,j;

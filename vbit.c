@@ -847,16 +847,16 @@ static int vbit_command(char *Line)
 		case 'W': // JW,<row>,data - Write a packet to the SRAM page buffer
 			xprintf(PSTR("JW Write SRAM data\n"));
 			ptr=&Line[3];
-			while (*ptr>=' ' && !isdigit(*ptr)) ptr++;
+			while (*ptr>=' ' && !isdigit(*ptr)) ptr++;	// Seek the row value
 			row=atoi(ptr);
 			if (!row) // Row address must be greater than 0 					
 			{
 				returncode=1;	
 				break;
 			}
-			while (isdigit(*ptr) || *ptr==',') ptr++;
+			while (isdigit(*ptr) || *ptr==',') ptr++;	// Seek the comma after row
 			// If the fifo is transmitting, we must wait here
-			for (i=0;FIFOBusy;i++) if (!i%100) xprintf(PSTR("*"));	// Can this break if the video source has stopped?
+			for (i=0;FIFOBusy;i++);	// Can this break if the video source has stopped? We may want to timeout on this!
 			xprintf(PSTR("JW addr=%d\n"),row);
 			// Write a single packet
 			// Not sure how we are going to map control codes but probably the same as OL 
@@ -874,9 +874,10 @@ static int vbit_command(char *Line)
 			WritePrefix(packet, 5, row); // This prefix gets replaced later
 			packet[3]=row;	// The row gets encoded just before writing to FIFO
 			//row++;
+			// MRG line format is bit 8 set if it is a control code < ' '
 			for (int i=5;i<45 && *ptr && *ptr!='\r';i++)
 			{
-				packet[i]=*ptr++;
+				packet[i]=*ptr++ & 0x7f;	
 			}
 			// ** find the address of the row **
 			n=SRAMAddress+(row-1)*PACKETSIZE;

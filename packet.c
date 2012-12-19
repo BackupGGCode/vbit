@@ -379,6 +379,8 @@ static unsigned char insert(char *packet, uint8_t field)
 	char data[80];
 	char *str;
 	static char *redirectPtr;	// When a page is redirected to SRAM we use this pointer
+	static char *redirectEnd;	// When a page is redirected to SRAM we use this pointer
+	static uint8_t redirectrow;	// When redirecting, use this as a row counter. Need to improve this to NOT transmit blank lines.
 	// char *p;
 	unsigned char row;
 	static uint8_t myfield;
@@ -481,6 +483,15 @@ static unsigned char insert(char *packet, uint8_t field)
 		if (page.redirect<SRAMPAGECOUNT)
 		{
 			redirectPtr=(char *)SRAMPAGEBASE+page.redirect*SRAMPAGESIZE;
+			redirectEnd=(char *)redirectPtr+SRAMPAGESIZE;
+			redirectrow=1;
+			// These are just for debugging
+			//packet[17]='p';
+			//packet[18]='a';packet[21]='A'+page.redirect; // A to N
+			//packet[19]='g';
+			//packet[20]='e';
+			//Parity(packet,13);	
+			
 		}
 		break;
 	case STATE_HEADER: // We are waiting for the field to change before we can tx
@@ -500,7 +511,8 @@ static unsigned char insert(char *packet, uint8_t field)
 		// and insert it here
 		if (page.redirect!=0xff)
 		{
-			// Get the next line of SRAM data
+			// Get the next valid line of SRAM data (it must start with 0x55
+			packet[0]=0;
 			DeselectSerialRam();
 			// xprintf(PSTR("Redirect reading from=%04X\n"),redirectPtr);
 			SetSerialRamAddress(SPIRAM_READ, (uint16_t)redirectPtr);
@@ -508,11 +520,19 @@ static unsigned char insert(char *packet, uint8_t field)
 			DeselectSerialRam();
 			for (int i=0;i<PACKETSIZE;i++)
 				packet[i]=data[i];
+			redirectPtr+=PACKETSIZE;					
+
+			// If there is no sensible data then draw dots
+			if (packet[0]!=0x55)
+			{
+				for (int i=5;i<45;i++)
+					packet[i]='.';
+				packet[3]=redirectrow;
+			}
+			redirectrow++;
 			
-			// Validate for CRI/FC
-			//if (packet[0]!=0x55 || packet[1]!=0x55 || packet[2]!=0x27)
-			// TODO: This isn't right. We should transmit all the valid packets in the page.
-			if (packet[0]!=0x55) // It isn't a valid packet? The page is ended.
+			// [should]Validate for CRI/FC
+			if (redirectPtr>=redirectEnd) // The page is ended?
 			{
 				state[mag]=STATE_IDLE;	// Set the IDLE state and get ready for the next page
 				noCarousel=1;
@@ -520,7 +540,6 @@ static unsigned char insert(char *packet, uint8_t field)
 				QuietLine(packet,0x0f);	// Wipe out this line, just in case			
 				break;
 			}
-			redirectPtr+=PACKETSIZE;
 			// Put the page's mag number in place of the one we have got.
 			// Note that the row is in packet[3]
 			WritePrefix(packet, page.mag, packet[3]); // This prefix gets replaced later
