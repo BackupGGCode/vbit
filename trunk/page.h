@@ -28,7 +28,7 @@
 #include "../SDCard/ff.h"
 #include "../SDCard/diskio.h"
 
-/** Structure to hold page details after parsing
+/** Structure and routines parse and store page details
  */
 typedef struct _PAGE_ 
 {
