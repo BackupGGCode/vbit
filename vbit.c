@@ -813,17 +813,17 @@ static int vbit_command(char *Line)
 		switch (Line[2])
 		{
 		case 'A': // eg. JA,0   - Set to the start of 
-			xprintf(PSTR("JA set SRAM address (page level)\n"));
+			//xprintf(PSTR("JA set SRAM address (page level)\n"));
 			Line[2]='0';Line[3]='x';
 			ptr=&Line[2];
 			xatoi(&ptr,&n);
-			xprintf(PSTR("JA page=%X SRAMPAGECOUNT=%X SRAMPAGEBASE=%X\n"),n,SRAMPAGECOUNT,SRAMPAGEBASE);
+			//xprintf(PSTR("JA page=%X SRAMPAGECOUNT=%X SRAMPAGEBASE=%X\n"),n,SRAMPAGECOUNT,SRAMPAGEBASE);
 			if (n>=SRAMPAGECOUNT)	// Make sure the page is in range
 				returncode=1;					
 			else
 			{
 				n=SRAMPAGEBASE+n*SRAMPAGESIZE;	// This is the actual address
-				xprintf(PSTR("JA address=%04X\n"),n);
+				//xprintf(PSTR("JA address=%04X\n"),n);
 				SRAMAddress=n;
 				//row=1;
 			}
@@ -836,8 +836,8 @@ static int vbit_command(char *Line)
 			Line[2]='0';Line[3]='x';
 			ptr=&Line[2];
 			xatoi(&ptr,&n);
-			xprintf(PSTR("JZ set SRAM address (byte level)\n"));
-			xprintf(PSTR("JZ page=%04X\n"),n);
+			//xprintf(PSTR("JZ set SRAM address (byte level)\n"));
+			//xprintf(PSTR("JZ page=%04X\n"),n);
 			// Set the SRAM page address at byte level. Needs an actual 16 bit address
 			// where only 15 bits are used.
 			// For finer control than the JA command.
@@ -845,7 +845,7 @@ static int vbit_command(char *Line)
 			SRAMAddress=n;
 			break;
 		case 'W': // JW,<row>,data - Write a packet to the SRAM page buffer
-			xprintf(PSTR("JW Write SRAM data\n"));
+			//xprintf(PSTR("JW Write SRAM data\n"));
 			ptr=&Line[3];
 			while (*ptr>=' ' && !isdigit(*ptr)) ptr++;	// Seek the row value
 			row=atoi(ptr);
@@ -857,7 +857,7 @@ static int vbit_command(char *Line)
 			while (isdigit(*ptr) || *ptr==',') ptr++;	// Seek the comma after row
 			// If the fifo is transmitting, we must wait here
 			for (i=0;FIFOBusy;i++);	// Can this break if the video source has stopped? We may want to timeout on this!
-			xprintf(PSTR("JW addr=%d\n"),row);
+			// xprintf(PSTR("JW addr=%d\n"),row);
 			// Write a single packet
 			// Not sure how we are going to map control codes but probably the same as OL 
 			// Write the packet that we are going to decode into @SRAMAddress
@@ -882,7 +882,7 @@ static int vbit_command(char *Line)
 			// ** find the address of the row **
 			n=SRAMAddress+(row-1)*PACKETSIZE;
 			SetSerialRamAddress(SPIRAM_WRITE, n);
-			xprintf(PSTR("JW write address=%04X\n"),n);
+			//xprintf(PSTR("JW write address=%04X\n"),n);
 
 			//SRAMAddress+=PACKETSIZE;
 			WriteSerialRam(packet,45);
