@@ -180,18 +180,32 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
     // END: Special effect
 	uint8_t hour, min, sec;
 	uint32_t utc;
+	uint8_t cbit;
 	WritePrefix(packet,mag,0);
 	packet[5]=HamTab[page%0x10];
 	packet[6]=HamTab[page/0x10];
 	packet[7]=HamTab[(subcode&0x0f)]; // S1
 	subcode>>=4;
-	packet[8]=HamTab[(subcode&0x07)]; // S2 TBA add C4
+	// Map the page settings control bits from MiniTED to actual teletext packet
+	cbit=0;
+	if (control & 0x4000) cbit=0x08;	// C4 Erase page
+	packet[8]=HamTab[(subcode&0x07) | cbit]; // S2 add C4
 	subcode>>=3;
 	packet[9]=HamTab[(subcode&0x0f)]; // S3
 	subcode>>=4;
-	packet[10]=HamTab[(subcode&0x03)]; // S4 TBA C6, C5
-	packet[11]=HamTab[0]; // TBA C7 to C10
-	packet[12]=HamTab[0]; // TBA C11 to C14 (0=parallel & language 0 (English))
+	cbit=0;
+	if (control & 0x0001) cbit=0x08;	// C5 Newsflash
+	if (control & 0x0002) cbit|=0x04;	// C6 Subtitle
+	packet[10]=HamTab[(subcode&0x03) | cbit]; // S4 C6, C5
+	cbit=0;
+	if (control & 0x0004)  cbit=0x08;	// C7 Suppress Header TODO: Check if these should be reverse order
+	if (control & 0x0008) cbit|=0x04;	// C8 Update
+	if (control & 0x0010) cbit|=0x02;	// C9 Interrupted sequence
+	if (control & 0x0020) cbit|=0x01;	// C10 Inhibit display
+	packet[11]=HamTab[cbit]; // C7 to C10
+	cbit=(control & 0x0380) >> 7;	// Shift the language bits C12,C13,C14. TODO: Check if C12/C14 need swapping
+	if (control & 0x0040) cbit|=0x08;
+	packet[12]=HamTab[cbit]; // C11 to C14 (C11=0 is parallel, C2,C13,C14 language)
 	strncpy(&packet[13],caption,32); // This is dangerously out of order! Need to range check and fill as needed
 	// Stuff the page number in. TODO: make it work with hex numbers etc.
 	p=strstr(packet,"mpp"); 
