@@ -648,7 +648,9 @@ static int vbit_command(char *Line)
 			break;
 		}		
 		break; // E commands
-	case 'e' : // ea or ee : Upload page(s). Warning. "page" is shared with the directory command
+	case 'e' : // ea or ee : Upload page(s).
+		// These pages add the lines at the end of the page file, and patch the index.
+		// Warning. "page" is shared with the directory command
 		// directory calls are blocked until you do ee.
 		switch (Line[2])
 		{
