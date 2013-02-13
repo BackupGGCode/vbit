@@ -194,6 +194,7 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 	packet[9]=HamTab[(subcode&0x0f)]; // S3
 	subcode>>=4;
 	cbit=0;
+	// Not sure if these bits are reversed. C5 and C6 are indistinguishable
 	if (control & 0x0001) cbit=0x08;	// C5 Newsflash
 	if (control & 0x0002) cbit|=0x04;	// C6 Subtitle
 	packet[10]=HamTab[(subcode&0x03) | cbit]; // S4 C6, C5
@@ -203,8 +204,8 @@ void Header(char *packet ,unsigned char mag, unsigned char page, unsigned int su
 	if (control & 0x0010) cbit|=0x02;	// C9 Interrupted sequence
 	if (control & 0x0020) cbit|=0x01;	// C10 Inhibit display
 	packet[11]=HamTab[cbit]; // C7 to C10
-	cbit=(control & 0x0380) >> 7;	// Shift the language bits C12,C13,C14. TODO: Check if C12/C14 need swapping
-	if (control & 0x0040) cbit|=0x08;	// C11 serial/parallel
+	cbit=(control & 0x0380) >> 6;	// Shift the language bits C12,C13,C14. TODO: Check if C12/C14 need swapping
+	if (control & 0x0040) cbit|=0x01;	// C11 serial/parallel
 	packet[12]=HamTab[cbit]; // C11 to C14 (C11=0 is parallel, C2,C13,C14 language)
 	strncpy(&packet[13],caption,32); // This is dangerously out of order! Need to range check and fill as needed
 	// Stuff the page number in. TODO: make it work with hex numbers etc.
