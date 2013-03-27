@@ -87,6 +87,7 @@ extern volatile uint8_t FIFOBusy; /// High when the FIFO is due to be transmitte
 #define SRAMPAGESIZE (SRAMPAGEPACKETS*PACKETSIZE)
 // How many of these pages can we have?
 // I make it (32768-810*20)/1170=14
+// So this is RD,0 to RD,d
 #define SRAMPAGECOUNT ((SPIRAMSIZE-SRAMPAGEBASE)/SRAMPAGESIZE)
 
 // So to access the page block n, the equation is
