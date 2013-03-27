@@ -806,7 +806,7 @@ static int vbit_command(char *Line)
 		break;
 	case 'J' : // J<h>,DATA - Send a packet to SRAM address
 		// Probably want a whole family of J commands.
-		// JA<h> - Set the address pointer to SRAM page <h> where <h> is 0..e
+		// JA<h> - Set the address pointer to SRAM page <h> where <h> is 0..d
 		// JW<data> - Write a complete 45 byte packet to the current address and increment
 		// JR<data> - Read back the next block of data and increment the pointer.
 		// [JT<h> - Retransmit page <h> immediately. (can't work. You must Tx the parent page) ]
