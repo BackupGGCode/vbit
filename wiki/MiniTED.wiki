@@ -12,7 +12,7 @@ It can be used to read, edit and write teletext pages and carousels. It handles 
 
 = Distribution =
 
-MiniTED is still under development but if you would like to try MiniTED then you can get it from the Downloads section.
+MiniTED is still under development but if you would like to try MiniTED then please go to https://www.dropbox.com/sh/6bb3n19d2vi28cz/AADC_JfuphLcc0r1cfiz9IIja. 
 
 = Bugs =
 Documents have pointers which are not handled correctly and so closed documents pop up again but empty. Ignore these phantom pages.
