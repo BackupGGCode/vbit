@@ -7,7 +7,7 @@ MiniTED is a teletext editor. MiniTED used to be an editor sold by MRG Systems. 
 
 = Capabilities =
 
-It can be used to read, edit and write teletext pages and carousels. It handles language flags and other attributes. It also It also connects with the TED Scheduler server which in turn talks directly to other inserters. MiniTED Protocols included are MRG Serial, MRG Network, MRG BAG and Astet. VBIT is also under development. At September 2012 it is still in early development and many features are not implemented, such as graphics editing.
+It can be used to read, edit and write teletext pages, but not yet carousels. It handles language flags and other attributes. Pages are compatible with MRG inserters and VBIT.
 
 
 = Distribution =
