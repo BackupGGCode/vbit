@@ -7,7 +7,7 @@ One application for VBIT is for private TV networks such as hotels. It can gener
 
 The hardware is an analogue video inserter, powered by USB with pages stored on an SD card. It has an 8 bit video path instead of the usual 10 and it still looks very good but of course this isn't intended for broadcast use. The teletext signal itself is excellent, thanks to those clever chaps at Philips/NXP/Trident/Sigma Solutions. You could always feed it into a databridge if you want broadcast standard video. The Kicad project files and source files are all up so you can build your own hardware. I made a batch of boards at Beta Layout and as it turns out Kicad exports make good PCBs. However, all the boards are now gone so you'll have to make your own. This is what it looks like at the moment.
 
-http://lh5.ggpht.com/_p2yA4mmkq0o/S5A4wYAvATI/AAAAAAAAIOg/jNyK4X9Yp2M/s400/IMG_0365.JPG
+![http://lh5.ggpht.com/_p2yA4mmkq0o/S5A4wYAvATI/AAAAAAAAIOg/jNyK4X9Yp2M/s400/IMG_0365.JPG](http://lh5.ggpht.com/_p2yA4mmkq0o/S5A4wYAvATI/AAAAAAAAIOg/jNyK4X9Yp2M/s400/IMG_0365.JPG)
 
 ![http://lh6.ggpht.com/_p2yA4mmkq0o/TCDWYU4MpYI/AAAAAAAAIuw/LAuCuDvZPyU/s800/twitfax.jpg](http://lh6.ggpht.com/_p2yA4mmkq0o/TCDWYU4MpYI/AAAAAAAAIuw/LAuCuDvZPyU/s800/twitfax.jpg) The source is on SVN and is not going to be stable as there is no official release yet. Go to Source->Browse if you just want to look at the source.
 
